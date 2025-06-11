@@ -75,27 +75,17 @@ class GRUCell(DesignCreatorModule, nn.Module):
             quant_data_dir=self.quant_data_dir,
             device=device
         )
-
-        self.rhprev_hadamard_product = HadamardProduct(
-            name=self.name + "rhprev_hadamard_product",
+        ####Thats wrong too####
+        self.rnh_hadamard_product = HadamardProduct(
+            name=self.name + "rnh_hadamard_product",
             num_features=self.hidden_size,  # TODO: check this
             num_dimensions=1,  # TODO: check this
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
         )
-        self.irhprev_concatenate = Concatenate(
-            name=self.name + "irhprev_concatenate",
-            inputs_size=self.inputs_size,
-            hidden_size=self.hidden_size,
-            num_features=self.inputs_size + self.hidden_size,
-            num_dimensions=1,
-            quant_bits=self.quant_bits,
-            quant_data_dir=self.quant_data_dir,
-            device=device,
-        )
-        self.h_tidle_linear = Linear(
-            name=self.name + "_h_tidle_linear",
+        self.ni_linear = Linear(
+            name=self.name + "_ni_linear",
             in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -104,11 +94,38 @@ class GRUCell(DesignCreatorModule, nn.Module):
             device=device,
             bias=True,
         )
-        self.h_tanh = HardTanh(
-            name=self.name + "_h_tanh", 
+        self.nh_linear = Linear(
+            name=self.name + "_nh_linear",
+            in_features=self.inputs_size + self.hidden_size,
+            out_features=self.hidden_size,
+            num_dimensions=1,
+            quant_bits=self.quant_bits,
+            quant_data_dir=self.quant_data_dir,
+            device=device,
+            bias=True,
+        )
+        self.n_addition = Addition(
+            name = self.name + "_n_addition",
+            num_features = self.hidden_size,
+            num_dimensions = 1,
+            quant_bits = self.quant_bits,
+            quant_data_dir = self.quant_data_dir,
+            device = device,
+        )
+        self.n_tanh = HardTanh(
+            name=self.name + "_n_tanh", 
             quant_bits=self.quant_bits, 
             quant_data_dir=self.quant_data_dir,
             device=device
+        )
+
+        self.onez_addidtion = Addition(
+            name = self.name + "_onez_addition",
+            num_features = self.hidden_size,
+            num_dimensions = 1,
+            quant_bits = self.quant_bits,
+            quant_data_dir = self.quant_data_dir,
+            device = device,
         )
 
         self.zhprev_hadamard_product = HadamardProduct(
@@ -119,8 +136,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
             quant_data_dir=self.quant_data_dir,
             device=device,
         )
-        self.zhtidle_hadamard_product = HadamardProduct(
-            name=self.name + "_zhtidle_hadamard_product",
+        self.zn_hadamard_product = HadamardProduct(
+            name=self.name + "_zn_hadamard_product",
             num_features=self.hidden_size,  # TODO: check this
             num_dimensions=1,  # TODO: check this
             quant_bits=self.quant_bits,
@@ -129,7 +146,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
 
         self.h_next_addition = Addition(
-            name=self.name + "_add",
+            name=self.name + "_h_next_addition",
             num_features=self.hidden_size,
             num_dimensions=1,  # TODO: check this
             quant_bits=self.quant_bits,
@@ -167,8 +184,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
             r_sigmoid=self.r_sigmoid,
             rhprev_hadamard_product=self.rhprev_hadamard_product,
             irhprev_concatenate=self.irhprev_concatenate,
-            h_tilde_gate_linear=self.h_tidle_linear,
-            h_tanh=self.h_tanh,
+            h_tilde_gate_linear=self.n_linear,
+            h_tanh=self.n_tanh,
             zhprev_hadamard_product=self.zhprev_hadamard_product,
             zhtilde_hadamard_product=self.zhtidle_hadamard_product,
             h_next_addition=self.h_next_addition,
@@ -185,8 +202,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.rhprev_hadamard_product.precompute()
         self.irhprev_concatenate.precompute()
 
-        self.h_tidle_linear.precompute()
-        self.h_tanh.precompute()
+        self.n_linear.precompute()
+        self.n_tanh.precompute()
         self.zhprev_hadamard_product.precompute()
         self.zhtidle_hadamard_product.precompute()
         self.h_next_addition.precompute()
@@ -310,21 +327,21 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.save_quant_data(
             q_concated_reset,
             self.quant_data_dir,
-            f"{self.h_tidle_linear.name}_q_x",
+            f"{self.n_linear.name}_q_x",
         )
-        q_h_tidle_outputs = self.h_tidle_linear.int_forward(q_inputs=q_concated_reset)
+        q_h_tidle_outputs = self.n_linear.int_forward(q_inputs=q_concated_reset)
         self.save_quant_data(
             q_h_tidle_outputs,
             self.quant_data_dir,
-            f"{self.h_tidle_linear.name}_q_y",
+            f"{self.n_linear.name}_q_y",
         )
 
         self.save_quant_data(
-            q_h_tidle_outputs, self.quant_data_dir, f"{self.h_tanh.name}_q_x"
+            q_h_tidle_outputs, self.quant_data_dir, f"{self.n_tanh.name}_q_x"
         )
-        q_h_tanh_outputs = self.h_tanh.int_forward(q_inputs=q_h_tidle_outputs)
+        q_h_tanh_outputs = self.n_tanh.int_forward(q_inputs=q_h_tidle_outputs)
         self.save_quant_data(
-            q_h_tanh_outputs, self.quant_data_dir, f"{self.h_tanh.name}_q_y"
+            q_h_tanh_outputs, self.quant_data_dir, f"{self.n_tanh.name}_q_y"
         )
 
         self.save_quant_data(
@@ -446,14 +463,14 @@ class GRUCell(DesignCreatorModule, nn.Module):
             given_inputs2_QParams=self.rhprev_hadamard_product.outputs_QParams,
         )
 
-        h_tidle_outputs = self.h_tidle_linear.forward(
+        h_tidle_outputs = self.n_linear.forward(
             inputs=concated_reset,
             given_inputs_QParams=self.irhprev_concatenate.outputs_QParams,
         )
 
-        h_tanh_outputs = self.h_tanh.forward(
+        h_tanh_outputs = self.n_tanh.forward(
             inputs=h_tidle_outputs,
-            given_inputs_QParams=self.h_tidle_linear.outputs_QParams,
+            given_inputs_QParams=self.n_linear.outputs_QParams,
         )
 
         h_next_inputs1 = self.zhprev_hadamard_product.forward(
@@ -475,7 +492,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             inputs1=minus_z_sigmoid_outputs,
             inputs2=h_tanh_outputs,
             given_inputs1_QParams=self.z_sigmoid.outputs_QParams,
-            given_inputs2_QParams=self.h_tanh.outputs_QParams,
+            given_inputs2_QParams=self.n_tanh.outputs_QParams,
         )
         h_next = self.h_next_addition.forward(
             inputs1=h_next_inputs1,
