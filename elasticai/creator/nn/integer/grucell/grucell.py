@@ -76,7 +76,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             device=device
         )
         self.rnh_hadamard_product = HadamardProduct(
-            name=self.name + "rnh_hadamard_product",
+            name=self.name + "_rnh_hadamard_product",
             num_features=self.hidden_size,  # TODO: check this
             num_dimensions=1,  # TODO: check this
             quant_bits=self.quant_bits,
@@ -190,6 +190,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             zhprev_hadamard_product=self.zhprev_hadamard_product,
             zn_hadamard_product=self.zn_hadamard_product,
             h_next_addition=self.h_next_addition,
+            quantized_one=self.quantized_one,
             work_library_name="work",
         )
 

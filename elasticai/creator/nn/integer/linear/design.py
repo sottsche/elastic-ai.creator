@@ -43,8 +43,10 @@ class Linear(Design):
 
         self._m_q = m_q
         self._m_q_shift = m_q_shift
-        self._m_q_data_width = int(np.ceil(np.log2(self._m_q))) + 1
-
+        if m_q != 0:
+            self._m_q_data_width = int(np.ceil(np.log2(self._m_q))) + 1
+        else:
+            self._m_q_data_width = 1
         self._z_x = z_x
         self._z_w = z_w
         self._z_b = z_b

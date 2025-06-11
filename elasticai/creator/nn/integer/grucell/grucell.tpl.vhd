@@ -19,7 +19,7 @@ entity ${name} is
         NH_GATE_LINEAR_Y_ADDR_WIDTH : integer := ${nh_gate_linear_y_addr_width};
         RNH_HADAMARD_PRODUCT_X_ADDR_WIDTH : integer := ${rnh_hadamard_product_x_addr_width};
         RNH_HADAMARD_PRODUCT_Y_ADDR_WIDTH : integer := ${rnh_hadamard_product_y_addr_width};
-        ZN_HADAMARD_PRODUCT_X_ADDR_WIDTH : integer := ${zn_hadamard_product_y_addr_width};
+        ZN_HADAMARD_PRODUCT_X_ADDR_WIDTH : integer := ${zn_hadamard_product_x_addr_width};
         ZN_HADAMARD_PRODUCT_X_ADDR_WIDTH : integer := ${zn_hadamard_product_y_addr_width};
         ZH_HADAMARD_PRODUCT_X_ADDR_WIDTH : integer := ${zh_hadamard_product_x_addr_width};
         ZH_HADAMARD_PRODUCT_Y_ADDR_WIDTH : integer := ${zh_hadamard_product_y_addr_width};
