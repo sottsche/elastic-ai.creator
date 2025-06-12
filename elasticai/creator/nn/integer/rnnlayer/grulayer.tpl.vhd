@@ -10,7 +10,7 @@ entity ${name} is
         X_1_ADDR_WIDTH : integer := ${x_1_addr_width};
         X_2_ADDR_WIDTH : integer := ${x_2_addr_width};
         Y_ADDR_WIDTH : integer := ${y_1_addr_width};
-        Y_2_ADDR_WIDTH : integer := ${y_2_addr_width};
+        Y_2_ADDR_WIDTH : integer := ${y_2_addr_width}; -- Only for python interface
         X_1_COUNT : integer := ${x_1_count};
         X_2_COUNT : integer := ${x_2_count};
         Y_COUNT : integer := ${y_1_count};
@@ -23,10 +23,12 @@ entity ${name} is
         clock : in std_logic;
         x_1_address : out std_logic_vector(X_1_ADDR_WIDTH - 1 downto 0);
         x_2_address : out std_logic_vector(X_2_ADDR_WIDTH - 1 downto 0);
-        y_address : in std_logic_vector(Y_ADDR_WIDTH - 1 downto 0);
+        y_1_address : in std_logic_vector(Y_ADDR_WIDTH - 1 downto 0);
+        y_2_address : in std_logic_vector(Y_ADDR_WIDTH - 1 downto 0);
         x_1 : in std_logic_vector(DATA_WIDTH - 1 downto 0);
         x_2 : in std_logic_vector(DATA_WIDTH - 1 downto 0);
-        y : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+        y_1 : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+        y_2 : out std_logic_vector(DATA_WIDTH - 1 downto 0);
         done : out std_logic
     );
     end ${name};
@@ -73,10 +75,10 @@ begin
     read_states_from_prev_iteration <= (loop_counter > 0);
     x_1_addr_int <= to_integer(unsigned(gru_cell_x_1_address)) + gru_cell_x_1_address_offset;
     x_1_address <= std_logic_vector(to_unsigned(x_1_address_int, x_1_address'length));
-    x_2_address <= gru_cell_x_2_address when read_states_from_prev_iter = false else (others => '0');
+    x_2_address <= gru_cell_x_2_address when read_states_from_prev_iteration = false else (others => '0');
     gru_cell_x_1_data <= x_1;
-    gru_cell_x_2_data <= x_2 when read_states_from_prev_iter=false else gru_cell_y_data;
-    gru_cell_y <= gru_cell_y_data;
+    gru_cell_x_2_data <= x_2 when read_states_from_prev_iteration=false else gru_cell_y_data;
+    y <= gru_cell_y_data;
 
     fsm_process : process(clock, reset)
     begin
