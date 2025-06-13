@@ -106,24 +106,24 @@ class GRUCell(Design):
         )
 
     def save_to(self, destination: Path) -> None:
-        self.ihprev_concatenate_design.save_to(destination)
+        self.ihprev_concatenate_design.save_to(destination.create_subpath(self._ihprev_concatenate.name))
         #Linears 4
-        self.z_gate_linear_design.save_to(destination)
-        self.r_gate_linear_design.save_to(destination)
-        self.ni_linear_design.save_to(destination)
-        self.nh_linear_design.save_to(destination)
+        self.z_gate_linear_design.save_to(destination.create_subpath(self._z_gate_linear.name))
+        self.r_gate_linear_design.save_to(destination.create_subpath(self._r_gate_linear.name))
+        self.ni_linear_design.save_to(destination.create_subpath(self._ni_linear.name))
+        self.nh_linear_design.save_to(destination.create_subpath(self._nh_linear.name))
         #Activation Functions 3
-        self.r_sigmoid_design.save_to(destination)
-        self.z_sigmoid_design.save_to(destination)
-        self.n_tanh_design.save_to(destination)
+        self.r_sigmoid_design.save_to(destination.create_subpath(self._r_sigmoid.name))
+        self.z_sigmoid_design.save_to(destination.create_subpath(self._z_sigmoid.name))
+        self.n_tanh_design.save_to(destination.create_subpath(self._n_tanh.name))
         #Additions 3
-        self.n_addition_design.save_to(destination)
-        self.minus_z_addition_design.save_to(destination)
-        self.h_next_addition_design.save_to(destination)
+        self.n_addition_design.save_to(destination.create_subpath(self._n_addition.name))
+        self.minus_z_addition_design.save_to(destination.create_subpath(self._minus_z_addition.name))
+        self.h_next_addition_design.save_to(destination.create_subpath(self._h_next_addition.name))
         #Hadamard Products 3
-        self.rnh_hadamard_product_design.save_to(destination)
-        self.zhprev_hadamard_product_design.save_to(destination)
-        self.zn_hadamard_product_design.save_to(destination)
+        self.rnh_hadamard_product_design.save_to(destination.create_subpath(self._rnh_hadamard_product.name))
+        self.zhprev_hadamard_product_design.save_to(destination.create_subpath(self._zhprev_hadamard_product.name))
+        self.zn_hadamard_product_design.save_to(destination.create_subpath(self._zn_hadamard_product.name))
 
         template = InProjectTemplate(
             package=module_to_package(self.__module__),

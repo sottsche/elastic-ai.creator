@@ -190,7 +190,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             zhprev_hadamard_product=self.zhprev_hadamard_product,
             zn_hadamard_product=self.zn_hadamard_product,
             h_next_addition=self.h_next_addition,
-            quantized_one=self.quantized_one,
+            quantized_one=self.quantized_one[0].item(),
             work_library_name="work",
         )
 
