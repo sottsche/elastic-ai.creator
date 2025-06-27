@@ -180,7 +180,7 @@ architecture rtl of ${name} is
     signal z_sigmoid_y_negative_std : std_logic_vector(DATA_WIDTH - 1 downto 0);
        
     begin
-       concatenate_enable <= enable;
+       concatenate_enable <= enable and not concatenate_done;
        concatenate_clock <= clock;
        ---Logic for switching the x_1 and x_2 address
        with concatenate_done select x_1_address <= 
@@ -198,7 +198,7 @@ architecture rtl of ${name} is
 
        with zh_hadamard_product_done select z_gate_linear_y_address <=
        zh_hadamard_product_x_1_address when '0',
-       z1_addition_x_1_address when others;
+       z1_addition_x_2_address when others;
        ----------------------------------------------
        z_sigmoid_y_integer <= to_integer(signed(z_sigmoid_y)) * (-1);
        z_sigmoid_y_negative_std <= std_logic_vector(to_signed(z_sigmoid_y_integer, DATA_WIDTH));
@@ -269,7 +269,7 @@ architecture rtl of ${name} is
             y => z_sigmoid_y
         );
         
-        ni_gate_linear_enable <= enable;
+        ni_gate_linear_enable <= enable and r_gate_linear_done;
         ni_gate_linear_clock <= clock;
         ni_gate_linear_x <= x_1;
         inst_${name}_ni_linear: entity ${work_library_name}.${name}_ni_linear(rtl)
@@ -283,9 +283,9 @@ architecture rtl of ${name} is
             done  => ni_gate_linear_done
         );
 
-        nh_gate_linear_enable <= enable;
+        nh_gate_linear_enable <= enable and r_gate_linear_done;
         nh_gate_linear_clock <= clock;
-        nh_gate_linear_x <= x_1;
+        nh_gate_linear_x <= x_2;
         inst_${name}_nh_linear: entity ${work_library_name}.${name}_nh_linear(rtl)
         port map (
             enable => nh_gate_linear_enable,
@@ -299,10 +299,10 @@ architecture rtl of ${name} is
 
         rnh_hadamard_product_enable <= r_gate_linear_done and nh_gate_linear_done;
         rnh_hadamard_product_clock <= clock;
-        r_gate_linear_y_address <= rnh_hadamard_product_x_1_address;
-        nh_gate_linear_y_address <= rnh_hadamard_product_x_2_address;
-        rnh_hadamard_product_x_1 <= r_sigmoid_y;
-        rnh_hadamard_product_x_2 <= nh_gate_linear_y;
+        r_gate_linear_y_address <= rnh_hadamard_product_x_2_address;
+        nh_gate_linear_y_address <= rnh_hadamard_product_x_1_address;
+        rnh_hadamard_product_x_2 <= r_sigmoid_y;
+        rnh_hadamard_product_x_1 <= nh_gate_linear_y;
         inst_${name}_rnh_hadamard_product: entity ${work_library_name}.${name}_rnh_hadamard_product(rtl)
         port map (
             enable => rnh_hadamard_product_enable,
@@ -318,10 +318,10 @@ architecture rtl of ${name} is
 
         n_addition_enable <= rnh_hadamard_product_done and ni_gate_linear_done;
         n_addition_clock <= clock;
-        rnh_hadamard_product_y_address <= n_addition_x_1_address;
-        ni_gate_linear_y_address <= n_addition_x_2_address;
-        n_addition_x_1 <= rnh_hadamard_product_y;
-        n_addition_x_2 <= ni_gate_linear_y;
+        rnh_hadamard_product_y_address <= n_addition_x_2_address;
+        ni_gate_linear_y_address <= n_addition_x_1_address;
+        n_addition_x_2 <= rnh_hadamard_product_y;
+        n_addition_x_1 <= ni_gate_linear_y;
         inst_${name}_n_addition : entity ${work_library_name}.${name}_n_addition(rtl)
         port map(
             enable => n_addition_enable,
@@ -350,7 +350,7 @@ architecture rtl of ${name} is
         z1_addition_clock <= clock;
         z_gate_linear_y_address <= z1_addition_x_2_address;
         z1_addition_x_1 <= std_logic_vector(to_signed(Z1_ADDITION_HYPER_PARAMETER_ONE, DATA_WIDTH));
-        z1_addition_x_2 <= z_sigmoid_y_negative_std;
+        z1_addition_x_2 <= z_sigmoid_y;
         inst_${name}_minuz_z_addition : entity ${work_library_name}.${name}_minuz_z_addition(rtl)
         port map(
             enable => z1_addition_enable,
@@ -369,7 +369,7 @@ architecture rtl of ${name} is
         z1_addition_y_address <= zn_hadamard_product_x_1_address;
         n_addition_y_address <= zn_hadamard_product_x_2_address;
         zn_hadamard_product_x_1 <= z1_addition_y;
-        zn_hadamard_product_x_2 <= n_addition_y;
+        zn_hadamard_product_x_2 <= n_tanh_y;
         inst_${name}_zn_nadamard_product: entity ${work_library_name}.${name}_zn_hadamard_product(rtl)
         port map (
             enable => zn_hadamard_product_enable,
@@ -385,14 +385,14 @@ architecture rtl of ${name} is
 
         zh_hadamard_product_enable <= z_gate_linear_done;
         zh_hadamard_product_clock <= clock;
-        zh_hadamard_product_x_1 <= z_gate_linear_y;
-        zh_hadamard_product_x_2 <= x_2;
-        inst_${name}_zh_nadamard_product: entity ${work_library_name}.${name}_zn_hadamard_product(rtl)
+        zh_hadamard_product_x_2 <= z_sigmoid_y;
+        zh_hadamard_product_x_1 <= x_2;
+        inst_${name}_zh_nadamard_product: entity ${work_library_name}.${name}_zhprev_hadamard_product(rtl)
         port map (
             enable => zh_hadamard_product_enable,
             clock  => zh_hadamard_product_clock,
-            x_1_address  => zh_hadamard_product_x_1_address,
-            x_2_address  => zh_hadamard_product_x_2_address,
+            x_1_address  => zh_hadamard_product_x_2_address,
+            x_2_address  => zh_hadamard_product_x_1_address,
             y_address  => zh_hadamard_product_y_address,
             x_1  => zh_hadamard_product_x_1,
             x_2  => zh_hadamard_product_x_2,

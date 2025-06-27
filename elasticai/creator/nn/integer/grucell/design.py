@@ -167,36 +167,26 @@ class GRUCell(Design):
         )
         destination.create_subpath(self.name).as_file(".vhd").write(template)
 
-#        template_test = InProjectTemplate(
-#           package=module_to_package(self.__module__),
-#           file_name="grucell_tb.tpl.vhd",
-#           parameters=dict(
-#               name=self.name,
-#               data_width=str(self._data_width),
-#               x_1_addr_width=str(self.ihprev_concatenate_design._x_1_addr_width),
-#               x_2_addr_width=str(self.ihprev_concatenate_design._x_2_addr_width),
-#               x_3_addr_width=str(self.fc_hadamard_product_design._x_1_addr_width),
-#               y_1_addr_width=str(self.oc_hadamard_product_design._y_addr_width),
-#               y_2_addr_width=str(self.fc_hadamard_product_design._y_addr_width),
-#               x1_num_features=str(self.concatenate_design._x1_num_features),
-#               x1_num_dimensions=str(self.concatenate_design._x1_num_dimensions),
-#               x2_num_features=str(self.concatenate_design._x2_num_features),
-#               x2_num_dimensions=str(self.concatenate_design._x2_num_dimensions),
-#               x_3_num_features=str(self.fc_hadamard_product_design._x_1_num_features),
-#               x_3_num_dimensions=str(
-#                   self.fc_hadamard_product_design._x_1_num_dimensions
-#               ),
-#               y_1_num_features=str(self.oc_hadamard_product_design._y_num_features),
-#               y_1_num_dimensions=str(
-#                   self.oc_hadamard_product_design._y_num_dimensions
-#               ),
-#               y_2_num_features=str(self.fc_hadamard_product_design._y_num_features),
-#               y_2_num_dimensions=str(
-#                   self.fc_hadamard_product_design._y_num_dimensions
-#               ),
-#               work_library_name=self._work_library_name,
-#           ),
-#       )
-#       destination.create_subpath(f"{self.name}_tb").as_file(".vhd").write(
-#           template_test
-#       )
+        template_test = InProjectTemplate(
+           package=module_to_package(self.__module__),
+           file_name="grucell_tb.tpl.vhd",
+           parameters=dict(
+               name=self.name,
+               data_width=str(self._data_width),
+               x_1_addr_width=str(self.ihprev_concatenate_design._x_1_addr_width),
+               x_2_addr_width=str(self.ihprev_concatenate_design._x_2_addr_width),
+               y_1_addr_width=str(self.h_next_addition_design._y_addr_width),
+               x_1_num_features=str(self.ihprev_concatenate_design._x_1_count),
+               x_1_num_dimensions=str(self.ihprev_concatenate_design._num_dimensions),
+               x_2_num_features=str(self.ihprev_concatenate_design._x_2_count),
+               x_2_num_dimensions=str(self.ihprev_concatenate_design._num_dimensions),
+               y_1_num_features=str(self.h_next_addition_design._num_features),
+               y_1_num_dimensions=str(
+                   self.h_next_addition_design._num_dimensions
+               ),
+               work_library_name=self._work_library_name,
+           ),
+       )
+        destination.create_subpath(f"{self.name}_tb").as_file(".vhd").write(
+           template_test
+       )

@@ -119,7 +119,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
 
         self.minus_z_addidtion = Addition(
-            name = self.name + "_minuz_z_addition",
+            name = self.name + "_minus_z_addition",
             num_features = self.hidden_size,
             num_dimensions = 1,
             quant_bits = self.quant_bits,
@@ -229,137 +229,50 @@ class GRUCell(DesignCreatorModule, nn.Module):
     ) -> torch.IntTensor:
         assert not self.training, "int_forward should be called in eval mode"
         assert self.precomputed, "precompute should be called before int_forward"
-
+        #self.h_prev_QParams.update_quant_params(q_h_prev)
         self.save_quant_data(q_inputs, self.quant_data_dir, f"{self.name}_q_x_1")
         self.save_quant_data(q_h_prev, self.quant_data_dir, f"{self.name}_q_x_2")
 
         # concatenate inputs and h_prev
-        self.save_quant_data(
-            q_inputs, self.quant_data_dir, f"{self.ihprev_concatenate.name}_q_x_1"
-        )
-        self.save_quant_data(
-            q_h_prev, self.quant_data_dir, f"{self.ihprev_concatenate.name}_q_x_2"
-        )
         q_concated_ihprev = self.ihprev_concatenate.int_forward(
             q_inputs1=q_inputs, q_inputs2=q_h_prev
-        )
-        self.save_quant_data(
-            q_concated_ihprev,
-            self.quant_data_dir,
-            f"{self.ihprev_concatenate.name}_q_y",
         )
 
         # gate linear transformations and activations
         # update gate
-        self.save_quant_data(
-            q_concated_ihprev,
-            self.quant_data_dir,
-            f"{self.z_gate_linear.name}_q_x",
-        )
         q_z_gate_outputs = self.z_gate_linear.int_forward(q_inputs=q_concated_ihprev)
-        self.save_quant_data(
-            q_z_gate_outputs, self.quant_data_dir, f"{self.z_gate_linear.name}_q_y"
-        )
-        self.save_quant_data(
-            q_z_gate_outputs, self.quant_data_dir, f"{self.z_sigmoid.name}_q_x"
-        )
         q_z_sigmoid_outputs = self.z_sigmoid.int_forward(q_inputs=q_z_gate_outputs)
-        self.save_quant_data(
-            q_z_sigmoid_outputs,
-            self.quant_data_dir,
-            f"{self.z_sigmoid.name}_q_y",
-        )
 
         # reset gate
-        self.save_quant_data(
-            q_concated_ihprev,
-            self.quant_data_dir,
-            f"{self.r_gate_linear.name}_q_x",
-        )
         q_r_gate_outputs = self.r_gate_linear.int_forward(q_inputs=q_concated_ihprev)
-        self.save_quant_data(
-            q_r_gate_outputs, self.quant_data_dir, f"{self.r_gate_linear.name}_q_y"
-        )
-        self.save_quant_data(
-            q_r_gate_outputs, self.quant_data_dir, f"{self.r_sigmoid.name}_q_x"
-        )
         q_r_sigmoid_outputs = self.r_sigmoid.int_forward(q_inputs=q_r_gate_outputs)
-        self.save_quant_data(
-            q_r_sigmoid_outputs,
-            self.quant_data_dir,
-            f"{self.r_sigmoid.name}_q_y",
-        )
 
         #ni_linear
-        self.save_quant_data(
-            q_inputs, self.quant_data_dir, f"{self.ni_linear.name}_q_x",
-        )
         q_ni_gate_outputs = self.ni_linear.int_forward(q_inputs=q_inputs)
 
-        self.save_quant_data(
-            q_ni_gate_outputs, self.quant_data_dir, f"{self.ni_linear.name}_q_y",
-        )
 
         #nh_linear
-        self.save_quant_data(
-            q_h_prev, self.quant_data_dir, f"{self.nh_linear.name}_q_x",
-        )
         q_nh_gate_outputs = self.nh_linear.int_forward(q_inputs=q_h_prev)
 
-        self.save_quant_data(
-            q_nh_gate_outputs, self.quant_data_dir, f"{self.nh_linear.name}_q_y",
-        )
 
         #rnh_hadamard_product
-        self.save_quant_data(
-            q_nh_gate_outputs, self.quant_data_dir, f"{self.rnh_hadamard_product.name}_q_x_1",
-        )
-        self.save_quant_data(
-            q_r_sigmoid_outputs, self.quant_data_dir, f"{self.rnh_hadamard_product.name}_q_x_2",
-        )
         q_rnh_hadamard_product_outputs = self.rnh_hadamard_product.int_forward(
             q_inputs1=q_nh_gate_outputs,
             q_inputs2=q_r_sigmoid_outputs
         )
-        self.save_quant_data(
-            q_rnh_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.rnh_hadamard_product.name}_q_y"
-        )
 
         #n_addition
-        self.save_quant_data(
-            q_ni_gate_outputs,
-            self.quant_data_dir,
-            f"{self.n_addition.name}_q_x_1",
-        )
-        self.save_quant_data(
-            q_rnh_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.n_addition.name}_q_x_2",
-        )
         q_n_addition_outputs = self.n_addition.int_forward(
             q_inputs1=q_ni_gate_outputs,
             q_inputs2=q_rnh_hadamard_product_outputs
         )
-        self.save_quant_data(
-            q_n_addition_outputs,
-            self.quant_data_dir,
-            f"{self.n_addition.name}_q_y"
-        )
 
         #n_tanh
-        self.save_quant_data(
-            q_n_addition_outputs, self.quant_data_dir, f"{self.n_tanh.name}_q_x"
-        )
         q_n_tanh_outputs = self.n_tanh.int_forward(q_inputs=q_n_addition_outputs)
-        self.save_quant_data(
-            q_n_tanh_outputs, self.quant_data_dir, f"{self.n_tanh.name}_q_y"
-        )
-
+        minus_z_one = self.quantized_one.repeat(q_z_sigmoid_outputs.numel())
         #minus_z_addition
         self.save_quant_data(
-            self.quantized_one,
+            minus_z_one,
             self.quant_data_dir,
             f"{self.minus_z_addidtion.name}_q_x_1"
         )
@@ -368,7 +281,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             self.quant_data_dir,
             f"{self.minus_z_addidtion.name}_q_x_2"
         )
-        q_minus_z_addition_outputs = self.math_ops.intsub(self.quantized_one, q_z_sigmoid_outputs, self.z_sigmoid.quant_bits + 1)
+        q_minus_z_addition_outputs = self.math_ops.intsub(minus_z_one, q_z_sigmoid_outputs, self.z_sigmoid.quant_bits)
 
         self.save_quant_data(
             q_minus_z_addition_outputs,
@@ -377,66 +290,32 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
 
         #zn_hadamard_product
-        self.save_quant_data(
-            q_minus_z_addition_outputs,
-            self.quant_data_dir,
-            f"{self.zn_hadamard_product.name}_q_x_1"
-        )
-        self.save_quant_data(
-            q_n_tanh_outputs,
-            self.quant_data_dir,
-            f"{self.zn_hadamard_product.name}_q_x_2"
-        )
         q_zn_hadamard_product_outputs = self.zn_hadamard_product.int_forward(
             q_inputs1=q_minus_z_addition_outputs,
             q_inputs2=q_n_tanh_outputs
         )
-        self.save_quant_data(
-            q_zn_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.zn_hadamard_product.name}_q_y"
-        )
 
         #zh_hadamard_product
-        self.save_quant_data(
-            q_z_sigmoid_outputs,
-            self.quant_data_dir,
-            f"{self.zhprev_hadamard_product.name}_q_x_1"
-        )
-        self.save_quant_data(
-            q_h_prev,
-            self.quant_data_dir,
-            f"{self.zhprev_hadamard_product.name}_q_x_2"
-        )
         q_zhprev_hadamard_product_outputs = self.zhprev_hadamard_product.int_forward(
             q_inputs1=q_z_sigmoid_outputs,
             q_inputs2=q_h_prev
         )
-        self.save_quant_data(
-            q_zhprev_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.zhprev_hadamard_product.name}_q_y"
-        )
 
         #h_next_addition
-        self.save_quant_data(
-            q_zn_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.h_next_addition.name}_q_x_1"
-        )
-        self.save_quant_data(
-            q_zhprev_hadamard_product_outputs,
-            self.quant_data_dir,
-            f"{self.h_next_addition.name}._q_x_2"
-        )
         q_h_next = self.h_next_addition.int_forward(
             q_inputs1=q_zn_hadamard_product_outputs,
             q_inputs2=q_zhprev_hadamard_product_outputs
         )
+        self.save_quant_data(q_zn_hadamard_product_outputs, self.quant_data_dir, f"{self.h_next_addition.name}_q_x_1")
+        self.save_quant_data(q_zhprev_hadamard_product_outputs, self.quant_data_dir, f"{self.h_next_addition.name}_q_x_2")
+        #q_h_next = self.math_ops.intadd(q_zn_hadamard_product_outputs, q_zhprev_hadamard_product_outputs, self.zhprev_hadamard_product.quant_bits)
+        #self.h_next_addition.outputs_QParams.update_quant_params(q_h_next)
+        self.save_quant_data(q_h_next, self.quant_data_dir, f"{self.h_next_addition.name}_q_y")
+        
         self.save_quant_data(
             q_h_next,
             self.quant_data_dir,
-            f"{self.h_next_addition.name}_q_y"
+            f"{self.name}_q_y_1"
         )
 
         q_c_next = None
