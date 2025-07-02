@@ -24,6 +24,7 @@ class GRUCell(Design):
         n_addition : object,
         n_tanh : object,
         minus_z_addition: object,
+        minus_z_subtraction: object,
         zhprev_hadamard_product: object,
         zn_hadamard_product : object,
         h_next_addition: object,
@@ -45,6 +46,7 @@ class GRUCell(Design):
         self._n_addition = n_addition#
         self._n_tanh = n_tanh #
         self._minus_z_addition = minus_z_addition#
+        self._minus_z_subtraction = minus_z_subtraction#
         self._zhprev_hadamard_product = zhprev_hadamard_product#
         self._zn_hadamard_product = zn_hadamard_product#
         self._h_next_addition = h_next_addition#
@@ -79,6 +81,9 @@ class GRUCell(Design):
         )
         self.minus_z_addition_design = self._minus_z_addition.create_design(
             name=self._minus_z_addition.name
+        )
+        self.minus_z_subtraction_design = self._minus_z_subtraction.create_design(
+            name=self._minus_z_subtraction.name
         )
         self.h_next_addition_design = self._h_next_addition.create_design(
             name=self._h_next_addition.name
@@ -119,6 +124,7 @@ class GRUCell(Design):
         #Additions 3
         self.n_addition_design.save_to(destination.create_subpath(self._n_addition.name))
         self.minus_z_addition_design.save_to(destination.create_subpath(self._minus_z_addition.name))
+        self.minus_z_subtraction_design.save_to(destination.create_subpath(self._minus_z_subtraction.name))
         self.h_next_addition_design.save_to(destination.create_subpath(self._h_next_addition.name))
         #Hadamard Products 3
         self.rnh_hadamard_product_design.save_to(destination.create_subpath(self._rnh_hadamard_product.name))
@@ -154,8 +160,8 @@ class GRUCell(Design):
                 n_addition_x_addr_width = str(self.n_addition_design._x_addr_width),
                 n_addition_y_addr_width = str(self.n_addition_design._y_addr_width),
                 z1_addition_hyper_parameter_one = str(self._quantized_one),
-                z1_addition_x_addr_width=str(self.minus_z_addition_design._x_addr_width),
-                z1_addition_y_addr_width=str(self.minus_z_addition_design._y_addr_width),
+                z1_addition_x_addr_width=str(self.minus_z_subtraction_design._x_addr_width),
+                z1_addition_y_addr_width=str(self.minus_z_subtraction_design._y_addr_width),
                 h_addition_x_addr_width=str(
                     self.h_next_addition_design._x_addr_width
                 ),

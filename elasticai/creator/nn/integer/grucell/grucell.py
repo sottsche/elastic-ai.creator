@@ -195,6 +195,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             n_addition = self.n_addition,
             n_tanh=self.n_tanh,
             minus_z_addition = self.minus_z_addidtion,
+            minus_z_subtraction=self.minus_z_subtraction,
             zhprev_hadamard_product=self.zhprev_hadamard_product,
             zn_hadamard_product=self.zn_hadamard_product,
             h_next_addition=self.h_next_addition,
@@ -218,6 +219,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.zhprev_hadamard_product.precompute()
         self.zn_hadamard_product.precompute()
         self.h_next_addition.precompute()
+        # self.minus_z_subtraction.inputs1_QParams.update_quant_params(torch.tensor(1.0))
+        self.quantized_one = self.z_sigmoid.quantized_one
 ############################
 
         self.precomputed = True
@@ -290,9 +293,12 @@ class GRUCell(DesignCreatorModule, nn.Module):
         #q_minus_z_addition_outputs = self.math_ops.intsub(self.quantized_one, q_z_sigmoid_outputs, self.z_sigmoid.quant_bits + 1)
 
         q_minus_z_subtraction_outputs = self.minus_z_subtraction.int_forward(
-            q_inputs1=self.quantized_one.repeat(q_z_sigmoid_outputs.numel()),
+            q_inputs1=minus_z_one,
             q_inputs2=q_z_sigmoid_outputs
         )
+
+        
+        
         # q_minus_z_addition_outputs = self.minus_z_addidtion.int_forward(
         #     q_inputs1=self.quantized_one.repeat(q_z_sigmoid_outputs.numel()),
         #     q_inputs2=q_z_sigmoid_outputs

@@ -180,7 +180,7 @@ architecture rtl of ${name} is
     signal z_sigmoid_y_negative_std : std_logic_vector(DATA_WIDTH - 1 downto 0);
        
     begin
-       concatenate_enable <= enable and not concatenate_done;
+       concatenate_enable <= enable;
        concatenate_clock <= clock;
        ---Logic for switching the x_1 and x_2 address
        with concatenate_done select x_1_address <= 
@@ -351,7 +351,7 @@ architecture rtl of ${name} is
         z_gate_linear_y_address <= z1_addition_x_2_address;
         z1_addition_x_1 <= std_logic_vector(to_signed(Z1_ADDITION_HYPER_PARAMETER_ONE, DATA_WIDTH));
         z1_addition_x_2 <= z_sigmoid_y;
-        inst_${name}_minuz_z_addition : entity ${work_library_name}.${name}_minuz_z_addition(rtl)
+        inst_${name}_minus_z_addition : entity ${work_library_name}.${name}_minus_z_subtraction(rtl)
         port map(
             enable => z1_addition_enable,
             clock => z1_addition_clock,

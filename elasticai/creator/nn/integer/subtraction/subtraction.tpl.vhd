@@ -136,7 +136,7 @@ begin
                         add_state <= s_sum;
 
                     when s_sum =>
-                        sum <= -(sum + x_1_scaled - x_2_scaled);
+                        sum <= (sum + x_1_scaled - x_2_scaled);
                         add_state <= s_output;
                     when s_output =>
                         var_y_store := sum + to_signed(Z_Y, sum'length);
