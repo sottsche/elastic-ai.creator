@@ -123,6 +123,7 @@ class Subtraction(DesignCreatorModule, nn.Module):
     ) -> torch.FloatTensor:
         if self.training:
             if given_inputs1_QParams is None:
+                self.inputs1_QParams.update_quant_params(torch.tensor(0))
                 self.inputs1_QParams.update_quant_params(inputs1)
             else:
                 self.inputs1_QParams = given_inputs1_QParams

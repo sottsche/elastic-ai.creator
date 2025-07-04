@@ -159,21 +159,23 @@ class RNNLayer(nn.Module):
             h_prev = SimQuant.apply(h_prev, self.h_prev_QParams)
             if c_prev is not None:  # to be compatible with GRU
                 c_prev = SimQuant.apply(c_prev, self.c_prev_QParams)
-
             h_next, c_next = self.rnn_cell.forward(
                 inputs=inputs[:, t, :],
                 h_prev=h_prev,
                 c_prev=c_prev,
                 given_inputs_QParams=self.inputs_QParams,
             )
-
             outputs[:, t, :] = h_next.clone()
             h_prev = h_next.clone()
+            self.h_prev_QParams = self.rnn_cell.h_next_QParams
+            if c_prev is not None:
+                self.c_prev_QParams = self.rnn_cell.c_next_QParams
             if c_next is not None:
                 c_prev = c_next.clone()
 
         if self.training:
             self.outputs_QParams.update_quant_params(outputs)
+            #self.h_prev_QParams.update_quant_params(h_prev)
         outputs = SimQuant.apply(outputs, self.outputs_QParams)
 
         self.h_next_QParams = self.rnn_cell.h_next_QParams
