@@ -411,8 +411,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
             given_inputs_QParams=self.n_addition.outputs_QParams
         )
 
-        self.h_prev_QParams.update_quant_params(torch.tensor(3.0, dtype=torch.float32))
-        self.h_prev_QParams.update_quant_params(torch.tensor(-3.0, dtype=torch.float32))
+        #self.h_prev_QParams.update_quant_params(torch.tensor(3.0, dtype=torch.float32))
+        #self.h_prev_QParams.update_quant_params(torch.tensor(-3.0, dtype=torch.float32))
         h_next_inputs1 = self.zhprev_hadamard_product.forward(
             inputs1=z_sigmoid_outputs,
             inputs2=h_prev,
@@ -429,7 +429,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
         h_next_inputs2 = self.zn_hadamard_product.forward(
             inputs1=minus_z_sigmoid_outputs,
             inputs2=n_tanh_outputs,
-            given_inputs1_QParams=self.z_sigmoid.outputs_QParams,
+            given_inputs1_QParams=self.minus_z_subtraction.outputs_QParams,
             given_inputs2_QParams=self.n_tanh.outputs_QParams,
         )
         h_next = self.h_next_addition.forward(
