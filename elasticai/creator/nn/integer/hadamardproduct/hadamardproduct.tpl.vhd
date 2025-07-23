@@ -31,6 +31,18 @@ entity ${name} is
     );
 end ${name};
 architecture rtl of ${name} is
+    function saturate(x : integer) return signed is
+    variable result : signed(DATA_WIDTH - 1 downto 0);
+    begin
+        if x < -2**(DATA_WIDTH-1) then
+            result := to_signed(-2**(DATA_WIDTH-1), DATA_WIDTH);
+        elsif x > 2**(DATA_WIDTH-1) - 1 then
+            result := to_signed(2**(DATA_WIDTH-1) - 1, DATA_WIDTH);
+        else
+            result := to_signed(x, DATA_WIDTH);
+        end if;
+        return result;
+    end function;
     function multiply(
         a : in signed(DATA_WIDTH downto 0);
         b : in signed(DATA_WIDTH downto 0)
@@ -140,7 +152,7 @@ begin
                         add_state <= s_output;
                     when s_output =>
                         var_y_store := product_scaled + to_signed(Z_Y, product_scaled'length);
-                        y_store_data <= std_logic_vector(resize(var_y_store, y_store_data'length));
+                        y_store_data <= std_logic_vector(saturate(to_integer(var_y_store)));
                         y_store_addr <= output_idx;
                         y_store_en <= '1';
                         if input_idx < NUM_DIMENSIONS * NUM_FEATURES-1 then
