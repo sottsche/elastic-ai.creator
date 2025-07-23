@@ -21,6 +21,8 @@ class Subtraction(Design):
         num_dimensions: int,
         m_q_1: int,
         m_q_2: int,
+        scaling_m_q_1: int,
+        scaling_m_q_2: int,
         m_q_1_shift: int,
         m_q_2_shift: int,
         z_x1: int,
@@ -37,6 +39,8 @@ class Subtraction(Design):
 
         self._m_q_1 = m_q_1
         self._m_q_2 = m_q_2
+        self._scaling_bits_M_1 = scaling_m_q_1
+        self._scaling_bits_M_2 = scaling_m_q_2
         self._m_q_1_shift = m_q_1_shift
         self._m_q_2_shift = m_q_2_shift
         self._m_q_1_data_width = int(np.ceil(np.log2(self._m_q_1))) + 1
@@ -79,8 +83,10 @@ class Subtraction(Design):
                 num_dimensions=str(self._num_dimensions),
                 m_q_1=str(self._m_q_1),
                 m_q_1_shift=str(self._m_q_1_shift),
+                scaling_m_q_1=str(self._scaling_bits_M_1),
                 m_q_2=str(self._m_q_2),
                 m_q_2_shift=str(self._m_q_2_shift),
+                scaling_m_q_2=str(self._scaling_bits_M_2),
                 m_q_data_width=str(self._m_q_data_width),
                 z_x_1=str(self._z_x1),
                 z_x_2=str(self._z_x2),

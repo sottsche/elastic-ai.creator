@@ -14,6 +14,8 @@ entity ${name} is
         M_Q_2 : integer := ${m_q_2};
         M_Q_1_SHIFT : integer := ${m_q_1_shift};
         M_Q_2_SHIFT : integer := ${m_q_2_shift};
+        SCALING_M_Q_1 : integer := ${scaling_m_q_1};
+        SCALING_M_Q_2 : integer := ${scaling_m_q_2};
         Z_X_1 : integer := ${z_x_1};
         Z_X_2 : integer := ${z_x_2};
         Z_Y : integer := ${z_y};
@@ -55,9 +57,9 @@ architecture rtl of ${name} is
             end if;
         end if;
         if is_negative then
-            return -resize(TMP_3, DATA_WIDTH + 1);
+            return -resize(TMP_3, SCALING_M_Q_1);
         else
-            return resize(TMP_3, DATA_WIDTH + 1);
+            return resize(TMP_3, SCALING_M_Q_1);
         end if;
     end function;
     signal n_clock : std_logic;
@@ -70,10 +72,10 @@ architecture rtl of ${name} is
     signal add_state : t_add_state;
     signal x_1_int : signed(DATA_WIDTH - 1 downto 0) := (others=>'0');
     signal x_1_sub_z : signed(DATA_WIDTH downto 0) := (others=>'0');
-    signal x_1_scaled : signed(DATA_WIDTH downto 0) := (others=>'0');
+    signal x_1_scaled : signed(SCALING_M_Q_1 - 1 downto 0) := (others=>'0');
     signal x_2_int : signed(DATA_WIDTH - 1 downto 0) := (others=>'0');
     signal x_2_sub_z : signed(DATA_WIDTH downto 0) := (others=>'0');
-    signal x_2_scaled : signed(DATA_WIDTH downto 0) := (others=>'0');
+    signal x_2_scaled : signed(SCALING_M_Q_2 - 1 downto 0) := (others=>'0');
     signal y_store_en : std_logic;
     signal y_store_addr : integer range 0 to NUM_FEATURES * NUM_DIMENSIONS;
     signal y_store_addr_std : std_logic_vector(Y_ADDR_WIDTH - 1 downto 0);

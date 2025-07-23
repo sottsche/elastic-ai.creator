@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import math
 from elasticai.creator.nn.integer.subtraction.design import Subtraction as SubtractionDesign 
 from elasticai.creator.nn.integer.design_creator_module import DesignCreatorModule
 from elasticai.creator.nn.integer.math_operations import MathOperations
@@ -49,6 +49,8 @@ class Subtraction(DesignCreatorModule, nn.Module):
             num_dimensions=self.num_dimensions,
             m_q_1=self.scale_factor_m_q_1.item(),
             m_q_2=self.scale_factor_m_q_2.item(),
+            scaling_m_q_1=self.scaling_bits_M_1,
+            scaling_m_q_2=self.scaling_bits_M_2,
             m_q_1_shift=self.scale_factor_m_q_1_shift.item(),
             m_q_2_shift=self.scale_factor_m_q_2_shift.item(),
             z_x1=self.inputs1_QParams.zero_point.item(),
@@ -62,15 +64,20 @@ class Subtraction(DesignCreatorModule, nn.Module):
         self.scale_factor_M_1 = (
             self.inputs1_QParams.scale_factor / self.outputs_QParams.scale_factor
         )
+        self.scaling_bits_M_1 = math.ceil(math.log2(self.scale_factor_M_1)) + self.quant_bits
+
         self.scale_factor_M_2 = (
             self.inputs2_QParams.scale_factor / self.outputs_QParams.scale_factor
         )
+        self.scaling_bits_M_2 = math.ceil(math.log2(self.scale_factor_M_2)) + self.quant_bits
+
         self.scale_factor_m_q_1_shift, self.scale_factor_m_q_1 = scaling_M(
             self.scale_factor_M_1
         )
         self.scale_factor_m_q_2_shift, self.scale_factor_m_q_2 = scaling_M(
             self.scale_factor_M_2
         )
+        print(self.outputs_QParams.zero_point)
         self.precomputed = True
 
     def int_forward(
