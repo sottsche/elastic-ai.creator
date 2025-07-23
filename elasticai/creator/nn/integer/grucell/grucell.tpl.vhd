@@ -175,6 +175,7 @@ architecture rtl of ${name} is
     signal n_tanh_done : std_logic;
 
     signal temp_x_2_address : std_logic_vector(CONCATENATE_X_2_ADDR_WIDTH -1 downto 0);
+    signal temp_z_address : std_logic_vector(Z_LINEAR_Y_ADDR_WIDTH - 1 downto 0);
 
     signal z_sigmoid_y_integer : integer;
     signal z_sigmoid_y_negative_std : std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -196,9 +197,13 @@ architecture rtl of ${name} is
        nh_gate_linear_x_address when '0',
        zh_hadamard_product_x_2_address when others;
 
-       with zh_hadamard_product_done select z_gate_linear_y_address <=
-       zh_hadamard_product_x_1_address when '0',
-       z1_addition_x_2_address when others;
+       with z1_addition_done select z_gate_linear_y_address <=
+       z1_addition_x_1_address when '0',
+       temp_z_address when others;
+
+       with zn_hadamard_product_done select temp_z_address <=
+         zn_hadamard_product_x_1_address when '0',
+         zh_hadamard_product_x_1_address when others;
        ----------------------------------------------
        z_sigmoid_y_integer <= to_integer(signed(z_sigmoid_y)) * (-1);
        z_sigmoid_y_negative_std <= std_logic_vector(to_signed(z_sigmoid_y_integer, DATA_WIDTH));
@@ -269,7 +274,7 @@ architecture rtl of ${name} is
             y => z_sigmoid_y
         );
         
-        ni_gate_linear_enable <= enable and r_gate_linear_done;
+        ni_gate_linear_enable <= enable and r_gate_linear_done and z_gate_linear_done;
         ni_gate_linear_clock <= clock;
         ni_gate_linear_x <= x_1;
         inst_${name}_ni_linear: entity ${work_library_name}.${name}_ni_linear(rtl)
@@ -283,7 +288,7 @@ architecture rtl of ${name} is
             done  => ni_gate_linear_done
         );
 
-        nh_gate_linear_enable <= enable and r_gate_linear_done;
+        nh_gate_linear_enable <= enable and r_gate_linear_done and z_gate_linear_done;
         nh_gate_linear_clock <= clock;
         nh_gate_linear_x <= x_2;
         inst_${name}_nh_linear: entity ${work_library_name}.${name}_nh_linear(rtl)
@@ -346,7 +351,7 @@ architecture rtl of ${name} is
             y => n_tanh_y
         );
 
-        z1_addition_enable <= z_gate_linear_done and zh_hadamard_product_done;
+        z1_addition_enable <= z_gate_linear_done and ni_gate_linear_done;
         z1_addition_clock <= clock;
         z1_addition_x_1 <= std_logic_vector(to_signed(ONE_MINUS_Z_HYPER_PARAMETER_ONE, DATA_WIDTH));
         z1_addition_x_2 <= z_sigmoid_y;
@@ -382,7 +387,7 @@ architecture rtl of ${name} is
             done  => zn_hadamard_product_done
         );
 
-        zh_hadamard_product_enable <= z_gate_linear_done;
+        zh_hadamard_product_enable <= z1_addition_done and z_gate_linear_done and nh_gate_linear_done and zn_hadamard_product_done;
         zh_hadamard_product_clock <= clock;
         zh_hadamard_product_x_1 <= z_sigmoid_y;
         zh_hadamard_product_x_2 <= x_2;

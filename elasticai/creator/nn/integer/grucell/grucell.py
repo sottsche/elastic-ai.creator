@@ -257,8 +257,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         #rnh_hadamard_product
         q_rnh_hadamard_outputs = self.rnh_hadamard.int_forward(
-            q_inputs1=q_nh_linear_outputs,
-            q_inputs2=q_r_sigmoid_outputs
+            q_inputs1=q_r_sigmoid_outputs,
+            q_inputs2=q_nh_linear_outputs,
         )
 
         #n_addition
@@ -272,7 +272,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         #one_minus_z
         q_one_minus_z_outputs = self.one_minus_z.int_forward(
-            q_inputs1=self.quantized_one,
+            q_inputs1=self.z_sigmoid.outputs_QParams.quantize(torch.tensor(1)),
             q_inputs2=q_z_sigmoid_outputs
         )
 
@@ -320,6 +320,9 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         if self.training:
             self.h_prev_QParams.update_quant_params(h_prev)
+            self.z_sigmoid.outputs_QParams.update_quant_params(
+                torch.tensor(1.0, dtype=torch.float32)
+            )
         
         # concatenate inputs and h_prev
         concatenated = self.concatenate.forward(
