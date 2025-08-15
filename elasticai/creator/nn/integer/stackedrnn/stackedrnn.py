@@ -20,6 +20,7 @@ class StackedRNN(DesignCreatorModule, nn.Module):
         super().__init__()
 
         self.cell_type = kwargs.get("cell_type")
+        self.gru_type = kwargs.get("gru_type", "standard")
         self.num_layers = kwargs.get("num_layers")
 
         self.inputs_size = kwargs.get("inputs_size")
@@ -41,6 +42,7 @@ class StackedRNN(DesignCreatorModule, nn.Module):
                     quant_bits=self.quant_bits,
                     window_size=self.window_size,
                     cell_type=self.cell_type,
+                    gru_type=self.gru_type,
                     batch_size=self.batch_size,
                     name=self.name + f"_rnn_layer_{i}",
                     quant_data_dir=self.quant_data_dir,

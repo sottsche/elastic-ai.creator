@@ -13,18 +13,14 @@ entity ${name} is
         R_LINEAR_Y_ADDR_WIDTH : integer := ${r_linear_y_addr_width};
         Z_LINEAR_X_ADDR_WIDTH : integer := ${z_linear_x_addr_width};
         Z_LINEAR_Y_ADDR_WIDTH : integer := ${z_linear_y_addr_width};
-        NI_LINEAR_X_ADDR_WIDTH : integer := ${ni_linear_x_addr_width};
-        NI_LINEAR_Y_ADDR_WIDTH : integer := ${ni_linear_y_addr_width};
-        NH_LINEAR_X_ADDR_WIDTH : integer := ${nh_linear_x_addr_width};
-        NH_LINEAR_Y_ADDR_WIDTH : integer := ${nh_linear_y_addr_width};
-        RNH_HADAMARD_X_ADDR_WIDTH : integer := ${rnh_hadamard_x_addr_width};
-        RNH_HADAMARD_Y_ADDR_WIDTH : integer := ${rnh_hadamard_y_addr_width};
+        RH_HADAMARD_X_ADDR_WIDTH : integer := ${rh_hadamard_x_addr_width};
+        RH_HADAMARD_Y_ADDR_WIDTH : integer := ${rh_hadamard_y_addr_width};
+        N_LINEAR_X_ADDR_WIDTH : integer := ${n_linear_x_addr_width};
+        N_LINEAR_Y_ADDR_WIDTH : integer := ${n_linear_y_addr_width};
         ZN_HADAMARD_X_ADDR_WIDTH : integer := ${zn_hadamard_x_addr_width};
         ZN_HADAMARD_Y_ADDR_WIDTH : integer := ${zn_hadamard_y_addr_width};
         ZH_PRODUCT_X_ADDR_WIDTH : integer := ${zh_hadamard_x_addr_width};
         ZH_PRODUCT_Y_ADDR_WIDTH : integer := ${zh_hadamard_y_addr_width};
-        N_ADDITION_X_ADDR_WIDTH : integer := ${n_addition_x_addr_width};
-        N_ADDITION_Y_ADDR_WIDTH : integer := ${n_addition_y_addr_width};
         ONE_MINUS_Z_HYPER_PARAMETER_ONE: integer := ${one_minus_z_hyper_parameter_one};
         ONE_MINUS_Z_X_ADDR_WIDTH : integer := ${one_minus_z_x_addr_width};
         ONE_MINUS_Z_Y_ADDR_WIDTH : integer := ${one_minus_z_y_addr_width};
@@ -65,6 +61,16 @@ architecture rtl of ${name} is
     signal concatenate_y_address : std_logic_vector(CONCATENATE_Y_ADDR_WIDTH -1 downto 0);
     signal concatenate_y : std_logic_vector(DATA_WIDTH -1 downto 0);
     signal concatenate_done : std_logic;
+
+    signal concatenate_n_enable : std_logic;
+    signal concatenate_n_clock  : std_logic;
+    signal concatenate_n_x_1_address : std_logic_vector(CONCATENATE_X_1_ADDR_WIDTH -1 downto 0);
+    signal concatenate_n_x_2_address : std_logic_vector(CONCATENATE_X_2_ADDR_WIDTH -1 downto 0);
+    signal concatenate_n_x_1 : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal concatenate_n_x_2 : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal concatenate_n_y_address : std_logic_vector(CONCATENATE_Y_ADDR_WIDTH -1 downto 0);
+    signal concatenate_n_y : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal concatenate_n_done : std_logic;
     
     signal r_gate_linear_enable : std_logic;
     signal r_gate_linear_clock : std_logic;
@@ -82,31 +88,23 @@ architecture rtl of ${name} is
     signal z_gate_linear_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal z_gate_linear_done : std_logic;
 
-    signal ni_gate_linear_enable : std_logic;
-    signal ni_gate_linear_clock : std_logic;
-    signal ni_gate_linear_x_address : std_logic_vector(NI_LINEAR_X_ADDR_WIDTH - 1 downto 0);
-    signal ni_gate_linear_x : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal ni_gate_linear_y_address : std_logic_vector(NI_LINEAR_Y_ADDR_WIDTH - 1 downto 0);
-    signal ni_gate_linear_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal ni_gate_linear_done : std_logic;
-
-    signal nh_gate_linear_enable : std_logic;
-    signal nh_gate_linear_clock : std_logic;
-    signal nh_gate_linear_x_address : std_logic_vector(NH_LINEAR_X_ADDR_WIDTH - 1 downto 0);
-    signal nh_gate_linear_x : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal nh_gate_linear_y_address : std_logic_vector(NH_LINEAR_Y_ADDR_WIDTH - 1 downto 0);
-    signal nh_gate_linear_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal nh_gate_linear_done : std_logic;
+    signal n_gate_linear_enable : std_logic;
+    signal n_gate_linear_clock : std_logic;
+    signal n_gate_linear_x_address : std_logic_vector(N_LINEAR_X_ADDR_WIDTH - 1 downto 0);
+    signal n_gate_linear_x : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal n_gate_linear_y_address : std_logic_vector(N_LINEAR_Y_ADDR_WIDTH - 1 downto 0);
+    signal n_gate_linear_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal n_gate_linear_done : std_logic;
     
-    signal rnh_hadamard_product_enable : std_logic;
-    signal rnh_hadamard_product_clock : std_logic;
-    signal rnh_hadamard_product_x_1_address : std_logic_vector(RNH_HADAMARD_X_ADDR_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_x_2_address : std_logic_vector(RNH_HADAMARD_X_ADDR_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_x_1 : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_x_2 : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_y_address : std_logic_vector(RNH_HADAMARD_Y_ADDR_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal rnh_hadamard_product_done : std_logic;
+    signal rh_hadamard_product_enable : std_logic;
+    signal rh_hadamard_product_clock : std_logic;
+    signal rh_hadamard_product_x_1_address : std_logic_vector(RH_HADAMARD_X_ADDR_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_x_2_address : std_logic_vector(RH_HADAMARD_X_ADDR_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_x_1 : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_x_2 : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_y_address : std_logic_vector(RH_HADAMARD_Y_ADDR_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal rh_hadamard_product_done : std_logic;
 
     signal zn_hadamard_product_enable : std_logic;
     signal zn_hadamard_product_clock : std_logic;
@@ -127,17 +125,7 @@ architecture rtl of ${name} is
     signal zh_hadamard_product_y_address : std_logic_vector(ZH_PRODUCT_Y_ADDR_WIDTH - 1 downto 0);
     signal zh_hadamard_product_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
     signal zh_hadamard_product_done : std_logic;
-    
-    signal n_addition_enable : std_logic;
-    signal n_addition_clock : std_logic;
-    signal n_addition_x_1_address : std_logic_vector(N_ADDITION_X_ADDR_WIDTH - 1 downto 0);
-    signal n_addition_x_2_address : std_logic_vector(N_ADDITION_X_ADDR_WIDTH - 1 downto 0);
-    signal n_addition_x_1 : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal n_addition_x_2 : std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal n_addition_y_address : std_logic_vector(N_ADDITION_Y_ADDR_WIDTH - 1 downto 0);
-    signal n_addition_y: std_logic_vector(DATA_WIDTH - 1 downto 0);
-    signal n_addition_done : std_logic;
-    
+        
     signal z1_addition_enable : std_logic;
     signal z1_addition_clock : std_logic;
     signal z1_addition_x_1_address : std_logic_vector(ONE_MINUS_Z_X_ADDR_WIDTH - 1 downto 0);
@@ -186,15 +174,15 @@ architecture rtl of ${name} is
        ---Logic for switching the x_1 and x_2 address
        with concatenate_done select x_1_address <= 
        concatenate_x_1_address when '0',
-       ni_gate_linear_x_address when others;
+       concatenate_n_x_1_address when others;
 
 
        with concatenate_done select x_2_address <= 
        concatenate_x_2_address when '0',
        temp_x_2_address when others;
 
-       with nh_gate_linear_done select temp_x_2_address <=
-       nh_gate_linear_x_address when '0',
+       with rh_hadamard_product_done select temp_x_2_address <=
+       rh_hadamard_product_x_2_address when '0',
        zh_hadamard_product_x_2_address when others;
 
        with z1_addition_done select z_gate_linear_y_address <=
@@ -272,75 +260,58 @@ architecture rtl of ${name} is
             y => z_sigmoid_y
         );
         
-        ni_gate_linear_enable <= concatenate_done;
-        ni_gate_linear_clock <= clock;
-        ni_gate_linear_x <= x_1;
-        inst_${name}_ni_linear: entity ${work_library_name}.${name}_ni_linear(rtl)
+        rh_hadamard_product_enable <= r_gate_linear_done;
+        rh_hadamard_product_clock <= clock;
+        r_gate_linear_y_address <= rh_hadamard_product_x_1_address;
+        rh_hadamard_product_x_1 <= r_sigmoid_y;
+        rh_hadamard_product_x_2 <= x_2;
+        inst_${name}_rh_hadamard: entity ${work_library_name}.${name}_rh_hadamard(rtl)
         port map (
-            enable => ni_gate_linear_enable,
-            clock  => ni_gate_linear_clock,
-            x_address  => ni_gate_linear_x_address,
-            y_address  => ni_gate_linear_y_address,
-            x  => ni_gate_linear_x,
-            y => ni_gate_linear_y,
-            done  => ni_gate_linear_done
+            enable => rh_hadamard_product_enable,
+            clock  => rh_hadamard_product_clock,
+            x_1_address  => rh_hadamard_product_x_1_address,
+            x_2_address  => rh_hadamard_product_x_2_address,
+            y_address  => rh_hadamard_product_y_address,
+            x_1  => rh_hadamard_product_x_1,
+            x_2  => rh_hadamard_product_x_2,
+            y => rh_hadamard_product_y,
+            done  => rh_hadamard_product_done
         );
-
-        nh_gate_linear_enable <= concatenate_done; 
-        nh_gate_linear_clock <= clock;
-        nh_gate_linear_x <= x_2;
-        inst_${name}_nh_linear: entity ${work_library_name}.${name}_nh_linear(rtl)
+        concatenate_n_enable <= rh_hadamard_product_done;
+        concatenate_n_clock <= clock;
+        rh_hadamard_product_y_address <= concatenate_n_x_1_address;
+        concatenate_n_x_1 <= x_1;
+        concatenate_n_x_2 <= rh_hadamard_product_y;
+        inst_${name}_concatenate_n: entity ${work_library_name}.${name}_concatenate_n(rtl)
         port map (
-            enable => nh_gate_linear_enable,
-            clock  => nh_gate_linear_clock,
-            x_address  => nh_gate_linear_x_address,
-            y_address  => nh_gate_linear_y_address,
-            x  => nh_gate_linear_x,
-            y => nh_gate_linear_y,
-            done  => nh_gate_linear_done
+            enable => concatenate_n_enable,
+            clock  => concatenate_n_clock,
+            x_1_address  => concatenate_n_x_1_address,
+            x_2_address  => concatenate_n_x_2_address,
+            y_address  => concatenate_n_y_address,
+            x_1  => concatenate_n_x_1,
+            x_2  => concatenate_n_x_2,
+            y => concatenate_n_y,
+            done  => concatenate_n_done
         );
-
-        rnh_hadamard_product_enable <= r_gate_linear_done and nh_gate_linear_done;
-        rnh_hadamard_product_clock <= clock;
-        r_gate_linear_y_address <= rnh_hadamard_product_x_1_address;
-        nh_gate_linear_y_address <= rnh_hadamard_product_x_2_address;
-        rnh_hadamard_product_x_1 <= r_sigmoid_y;
-        rnh_hadamard_product_x_2 <= nh_gate_linear_y;
-        inst_${name}_rnh_hadamard: entity ${work_library_name}.${name}_rnh_hadamard(rtl)
+        n_gate_linear_enable <= concatenate_n_done;
+        n_gate_linear_clock <= clock;
+        concatenate_n_y_address <= n_gate_linear_x_address;
+        n_gate_linear_x <= concatenate_n_y;
+        inst_${name}_n_gate_linear: entity ${work_library_name}.${name}_n_linear(rtl)
         port map (
-            enable => rnh_hadamard_product_enable,
-            clock  => rnh_hadamard_product_clock,
-            x_1_address  => rnh_hadamard_product_x_1_address,
-            x_2_address  => rnh_hadamard_product_x_2_address,
-            y_address  => rnh_hadamard_product_y_address,
-            x_1  => rnh_hadamard_product_x_1,
-            x_2  => rnh_hadamard_product_x_2,
-            y => rnh_hadamard_product_y,
-            done  => rnh_hadamard_product_done
+            enable => n_gate_linear_enable,
+            clock  => n_gate_linear_clock,
+            x_address  => n_gate_linear_x_address,
+            y_address  => n_gate_linear_y_address,
+            x  => n_gate_linear_x,
+            y => n_gate_linear_y,
+            done  => n_gate_linear_done
         );
 
-        n_addition_enable <= rnh_hadamard_product_done and ni_gate_linear_done;
-        n_addition_clock <= clock;
-        ni_gate_linear_y_address <= n_addition_x_1_address;
-        rnh_hadamard_product_y_address <= n_addition_x_2_address;
-        n_addition_x_1 <= ni_gate_linear_y;
-        n_addition_x_2 <= rnh_hadamard_product_y;
-        inst_${name}_n_addition : entity ${work_library_name}.${name}_n_addition(rtl)
-        port map(
-            enable => n_addition_enable,
-            clock => n_addition_clock,
-            x_1_address=>n_addition_x_1_address,
-            x_2_address => n_addition_x_2_address,
-            y_address => n_addition_y_address,
-            x_1 => n_addition_x_1,
-            x_2 => n_addition_x_2,
-            y => n_addition_y,
-            done => n_addition_done
-        );
-
-        n_tanh_enable <= n_addition_done;
+        n_tanh_enable <= n_gate_linear_done;
         n_tanh_clock <= clock;
-        n_tanh_x <= n_addition_y;
+        n_tanh_x <= n_gate_linear_y;
         inst_${name}_n_tanh : entity ${work_library_name}.${name}_n_tanh(rtl)
         port map(
             enable => n_tanh_enable,
@@ -366,10 +337,9 @@ architecture rtl of ${name} is
             done => z1_addition_done
         );
 
-        zn_hadamard_product_enable <= z1_addition_done and n_addition_done;
+        zn_hadamard_product_enable <= z1_addition_done and n_gate_linear_done;
         zn_hadamard_product_clock <= clock;
         z1_addition_y_address <= zn_hadamard_product_x_1_address;
-        n_addition_y_address <= zn_hadamard_product_x_2_address;
         zn_hadamard_product_x_1 <= z1_addition_y;
         zn_hadamard_product_x_2 <= n_tanh_y;
         inst_${name}_zn_hadamard: entity ${work_library_name}.${name}_zn_hadamard(rtl)

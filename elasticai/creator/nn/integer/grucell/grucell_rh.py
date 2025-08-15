@@ -8,7 +8,7 @@ from elasticai.creator.nn.integer.addition import Addition
 from elasticai.creator.nn.integer.subtraction import Subtraction
 from elasticai.creator.nn.integer.concatenate import Concatenate
 from elasticai.creator.nn.integer.design_creator_module import DesignCreatorModule
-from elasticai.creator.nn.integer.grucell.design import GRUCell as GRUCellDesign
+from elasticai.creator.nn.integer.grucell.design_rh import GRUCell as GRUCellDesign
 from elasticai.creator.nn.integer.hadamardproduct import HadamardProduct
 from elasticai.creator.nn.integer.hardsigmoid import HardSigmoid
 from elasticai.creator.nn.integer.hardtanh import HardTanh
@@ -77,41 +77,33 @@ class GRUCell(DesignCreatorModule, nn.Module):
             quant_data_dir=self.quant_data_dir,
             device=device
         )
-        self.rnh_hadamard = HadamardProduct(
-            name=self.name + "_rnh_hadamard",
+        self.rh_hadamard = HadamardProduct(
+            name=self.name + "_rh_hadamard",
             num_features=self.hidden_size,  # TODO: check this
             num_dimensions=1,  # TODO: check this
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
         )
-        self.ni_linear = Linear(
-            name=self.name + "_ni_linear",
-            in_features=self.inputs_size,
+        self.concatenate_n = Concatenate(
+            name=self.name + "_concatenate_n",
+            inputs_size=self.inputs_size,
+            hidden_size=self.hidden_size,
+            num_features=self.inputs_size + self.hidden_size,
+            num_dimensions=1,
+            quant_bits=self.quant_bits,
+            quant_data_dir=self.quant_data_dir,
+            device=device,
+        )
+        self.n_linear = Linear(
+            name=self.name + "_n_linear",
+            in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
             bias=True,
-        )
-        self.nh_linear = Linear(
-            name=self.name + "_nh_linear",
-            in_features=self.hidden_size,
-            out_features=self.hidden_size,
-            num_dimensions=1,
-            quant_bits=self.quant_bits,
-            quant_data_dir=self.quant_data_dir,
-            device=device,
-            bias=True,
-        )
-        self.n_addition = Addition(
-            name = self.name + "_n_addition",
-            num_features = self.hidden_size,
-            num_dimensions = 1,
-            quant_bits = self.quant_bits,
-            quant_data_dir = self.quant_data_dir,
-            device = device,
         )
         self.n_tanh = HardTanh(
             name=self.name + "_n_tanh", 
@@ -177,18 +169,17 @@ class GRUCell(DesignCreatorModule, nn.Module):
             name=name,
             data_width=self.quant_bits,
             concatenate=self.concatenate,
-            z_linear=self.z_linear,
-            z_sigmoid=self.z_sigmoid,
+            f_linear=self.z_linear,
+            f_sigmoid=self.z_sigmoid,
             r_linear=self.r_linear,
             r_sigmoid=self.r_sigmoid,
-            ni_linear=self.ni_linear,
-            nh_linear=self.nh_linear,
-            rnh_hadamard=self.rnh_hadamard,
-            n_addition = self.n_addition,
+            fh_hadamard=self.rh_hadamard,
+            concatenate_n=self.concatenate_n,
+            n_linear=self.n_linear,
             n_tanh=self.n_tanh,
-            one_minus_z=self.one_minus_z,
-            zH_hadamard=self.zH_hadamard,
-            zN_hadamard=self.zN_hadamard,
+            one_minus_f=self.one_minus_z,
+            fH_hadamard=self.zH_hadamard,
+            fN_hadamard=self.zN_hadamard,
             h_next_addition=self.h_next_addition,
             quantized_one=self.quantized_one[0].item(),
             work_library_name="work",
@@ -200,10 +191,9 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.z_sigmoid.precompute()
         self.r_linear.precompute()
         self.r_sigmoid.precompute()
-        self.ni_linear.precompute()
-        self.nh_linear.precompute()
-        self.rnh_hadamard.precompute()
-        self.n_addition.precompute()
+        self.rh_hadamard.precompute()
+        self.concatenate_n.precompute()
+        self.n_linear.precompute()
         self.n_tanh.precompute()
         self.one_minus_z.precompute()
         self.zH_hadamard.precompute()
@@ -248,28 +238,21 @@ class GRUCell(DesignCreatorModule, nn.Module):
         q_r_linear_outputs = self.r_linear.int_forward(q_inputs=q_concated_ihprev)
         q_r_sigmoid_outputs = self.r_sigmoid.int_forward(q_inputs=q_r_linear_outputs)
 
-        #ni_linear
-        q_ni_linear_outputs = self.ni_linear.int_forward(q_inputs=q_inputs)
-
-
-        #nh_linear
-        q_nh_linear_outputs = self.nh_linear.int_forward(q_inputs=q_h_prev)
-
-
-        #rnh_hadamard_product
-        q_rnh_hadamard_outputs = self.rnh_hadamard.int_forward(
+        #rh_hadamard_product
+        q_rh_hadamard_outputs = self.rh_hadamard.int_forward(
             q_inputs1=q_r_sigmoid_outputs,
-            q_inputs2=q_nh_linear_outputs,
+            q_inputs2=q_h_prev,
+        )
+        q_n_concated = self.concatenate_n.int_forward(
+            q_inputs1= q_inputs,
+            q_inputs2= q_rh_hadamard_outputs,
         )
 
-        #n_addition
-        q_n_addition_outputs = self.n_addition.int_forward(
-            q_inputs1=q_ni_linear_outputs,
-            q_inputs2=q_rnh_hadamard_outputs
-        )
+        #ni_linear
+        q_n_linear_outputs = self.n_linear.int_forward(q_inputs=q_n_concated)
 
         #n_tanh
-        q_n_tanh_outputs = self.n_tanh.int_forward(q_inputs=q_n_addition_outputs)
+        q_n_tanh_outputs = self.n_tanh.int_forward(q_inputs=q_n_linear_outputs)
 
         #one_minus_z
         q_one_minus_z_outputs = self.one_minus_z.int_forward(
@@ -353,34 +336,26 @@ class GRUCell(DesignCreatorModule, nn.Module):
             inputs=r_linear_outputs,
             given_inputs_QParams=self.r_linear.outputs_QParams,
         )
-
-        ni_linear_outputs = self.ni_linear.forward(
-            inputs=inputs,
-            given_inputs_QParams=self.inputs_QParams
-        )
-
-        nh_linear_outputs = self.nh_linear.forward(
-            inputs=h_prev,
-            given_inputs_QParams=self.h_prev_QParams
-        )
-
-        rnh_hadamard_outputs = self.rnh_hadamard.forward(
+        rh_hadamard_outputs = self.rh_hadamard.forward(
             inputs1=r_sigmoid_outputs,
-            inputs2=nh_linear_outputs,
-            given_inputs1_QParams=self.r_linear.outputs_QParams,
-            given_inputs2_QParams=self.nh_linear.outputs_QParams
+            inputs2=h_prev,
+            given_inputs1_QParams=self.r_sigmoid.outputs_QParams,
+            given_inputs2_QParams=self.h_prev_QParams,
         )
-
-        n_addition_outputs = self.n_addition.forward(
-            inputs1=ni_linear_outputs,
-            inputs2=rnh_hadamard_outputs,
-            given_inputs1_QParams=self.ni_linear.outputs_QParams,
-            given_inputs2_QParams=self.rnh_hadamard.outputs_QParams
+        n_concatenated = self.concatenate_n.forward(
+            inputs1=inputs,
+            inputs2=rh_hadamard_outputs,
+            given_inputs1_QParams=self.inputs_QParams,
+            given_inputs2_QParams=self.rh_hadamard.outputs_QParams,
+        )
+        n_linear_outputs = self.n_linear.forward(
+            inputs=n_concatenated,
+            given_inputs_QParams=self.concatenate_n.outputs_QParams,
         )
 
         n_tanh_outputs = self.n_tanh.forward(
-            inputs=n_addition_outputs,
-            given_inputs_QParams=self.n_addition.outputs_QParams
+            inputs=n_linear_outputs,
+            given_inputs_QParams=self.n_linear.outputs_QParams
         )
 
         #self.h_prev_QParams.update_quant_params(torch.tensor(3.0, dtype=torch.float32))
