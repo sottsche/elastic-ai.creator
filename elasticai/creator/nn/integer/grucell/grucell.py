@@ -46,6 +46,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.z_linear = Linear(
             name=self.name + "_z_linear",
+            use_parallelised_template=True,
+            unroll_factor=2,
             in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -63,6 +65,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         self.r_linear = Linear(
             name=self.name + "_r_linear",
+            use_parallelised_template=True,
+            unroll_factor=2,
             in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -87,6 +91,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.ni_linear = Linear(
             name=self.name + "_ni_linear",
+            use_parallelised_template=False,
             in_features=self.inputs_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -97,6 +102,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.nh_linear = Linear(
             name=self.name + "_nh_linear",
+            use_parallelised_template=True,
+            unroll_factor=2,
             in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,

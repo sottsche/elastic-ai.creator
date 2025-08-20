@@ -35,15 +35,15 @@ ifeq ($(strip $(TESTBENCH)),)
 \t\t@exit 1
 endif
 
-\t@mkdir $(SIMDIR)
-\t@$(GHDL_CMD) -i $(GHDL_FLAGS) --workdir=$(SIMDIR) --work=work $(TESTBENCHPATH) $(FILES) > $(SIMDIR)/make_output.txt
-\t@$(GHDL_CMD) -m $(GHDL_FLAGS) --workdir=$(SIMDIR) --work=work $(TESTBENCHFILE) > $(SIMDIR)/make_output.txt
+\t@mkdir -p $(SIMDIR)/$(TESTBENCH)
+\t@$(GHDL_CMD) -i $(GHDL_FLAGS) --workdir=$(SIMDIR)/$(TESTBENCH) --work=work $(TESTBENCHPATH) $(FILES) > $(SIMDIR)/$(TESTBENCH)/make_$(TESTBENCH)_output.txt
+\t@$(GHDL_CMD) -m $(GHDL_FLAGS) --workdir=$(SIMDIR)/$(TESTBENCH) --work=work $(TESTBENCHFILE) > $(SIMDIR)/$(TESTBENCH)/make_$(TESTBENCH)_output.txt
 
 run:
-\t@$(GHDL_CMD) -r $(GHDL_FLAGS) --workdir=$(SIMDIR) $(TESTBENCHFILE) --vcd=$(SIMDIR)/$(TESTBENCHFILE).vcd $(GHDL_SIM_OPT) > $(SIMDIR)/make_output.txt
+\t@$(GHDL_CMD) -r $(GHDL_FLAGS) --workdir=$(SIMDIR)/$(TESTBENCH) $(TESTBENCHFILE) --vcd=$(SIMDIR)/$(TESTBENCH)/$(TESTBENCHFILE).vcd $(GHDL_SIM_OPT) > $(SIMDIR)/$(TESTBENCH)/make_$(TESTBENCH)_output.txt
 
 view:
-\t@$(WAVEFORM_VIEWER) $(SIMDIR)/$(TESTBENCHFILE).vcd > /dev/null 2>&1 &
+\t@$(WAVEFORM_VIEWER) $(SIMDIR)/$(TESTBENCH)/$(TESTBENCHFILE).vcd > /dev/null 2>&1 &
 
 clean:
 \t@rm -rf $(SIMDIR) *.cf

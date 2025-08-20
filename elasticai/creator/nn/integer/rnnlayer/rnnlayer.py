@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 
-from elasticai.creator.nn.integer.grucell.grucell_rnh import GRUCell
-
 from elasticai.creator.nn.integer.lstmcell import LSTMCell
 from elasticai.creator.nn.integer.mgucell import MGUCell
 from elasticai.creator.nn.integer.quant_utils import (
@@ -60,7 +58,7 @@ class RNNLayer(nn.Module):
                     device=device,
                 )
             else:
-                from elasticai.creator.nn.integer.grucell.grucell_rnh import GRUCell
+                from elasticai.creator.nn.integer.grucell.grucell_rh import GRUCell
                 self.rnn_cell = GRUCell(
                     name=f"{self.name}_gru_cell",
                     inputs_size=self.inputs_size,

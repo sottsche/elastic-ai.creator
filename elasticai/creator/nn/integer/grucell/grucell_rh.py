@@ -260,7 +260,6 @@ class GRUCell(DesignCreatorModule, nn.Module):
             q_inputs2=q_z_sigmoid_outputs
         )
 
-        
         #zn_hadamard_product
         q_zN_hadamard_outputs = self.zN_hadamard.int_forward(
             q_inputs1=q_one_minus_z_outputs,
