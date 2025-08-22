@@ -57,8 +57,19 @@ class RNNLayer(nn.Module):
                     quant_data_dir=self.quant_data_dir,
                     device=device,
                 )
-            else:
+            elif self.gru_type == "rh":
                 from elasticai.creator.nn.integer.grucell.grucell_rh import GRUCell
+                self.rnn_cell = GRUCell(
+                    name=f"{self.name}_gru_cell",
+                    inputs_size=self.inputs_size,
+                    hidden_size=self.hidden_size,
+                    window_size=self.window_size,
+                    quant_bits=self.quant_bits,
+                    quant_data_dir=self.quant_data_dir,
+                    device=device,
+                )
+            elif self.gru_type == "variant_1":
+                from elasticai.creator.nn.integer.grucell.grucell_1 import GRUCell
                 self.rnn_cell = GRUCell(
                     name=f"{self.name}_gru_cell",
                     inputs_size=self.inputs_size,

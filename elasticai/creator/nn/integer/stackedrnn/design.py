@@ -36,15 +36,21 @@ class StackedRNN(Design):
         self.rnn_layer_0_design = self._rnn_layers[0].create_design(
             name=self._rnn_layers[0].name
         )
+        self.gru_type = self._rnn_layers[0].gru_type
 
         self._x_1_count = self.rnn_layer_0_design._x_1_count
         self._x_2_count = self.rnn_layer_0_design._x_2_count
         self._y_1_count = self.rnn_layer_0_design._y_1_count
         self._y_2_count = self.rnn_layer_0_design._y_2_count
-        self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
+        #self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.r_linear_design._z_x
         if self.rnn_layer_0_design._cell_type == "gru":
+            if self.gru_type in ("standard", "rh"):
+                self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
+            elif self.gru_type == "variant_1":
+                self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.r_linear_design._z_x
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.h_next_addition_design._z_x2
         elif self.rnn_layer_0_design._cell_type == "lstm":
+            self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x_2
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.fc_hadamard_product_design._z_x2
 
         self._x_1_addr_width = calculate_address_width(self._x_1_count)

@@ -12,8 +12,7 @@ from elasticai.creator.nn.integer.grucell.design_rh import GRUCell as GRUCellDes
 from elasticai.creator.nn.integer.hadamardproduct import HadamardProduct
 from elasticai.creator.nn.integer.hardsigmoid import HardSigmoid
 from elasticai.creator.nn.integer.hardtanh import HardTanh
-from elasticai.creator.nn.integer.linear import Linear 
-from elasticai.creator.nn.integer.linear.linear_with_subtraction import LinearWithSubtraction
+from elasticai.creator.nn.integer.linear import Linear
 from elasticai.creator.nn.integer.math_operations.math_operations import MathOperations
 from elasticai.creator.nn.integer.quant_utils.Observers import GlobalMinMaxObserver
 from elasticai.creator.nn.integer.quant_utils.QParams import AsymmetricSignedQParams
@@ -47,6 +46,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.z_linear = Linear(
             name=self.name + "_z_linear",
             in_features=self.inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
@@ -64,6 +65,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.r_linear = Linear(
             name=self.name + "_r_linear",
             in_features=self.inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
@@ -98,6 +101,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.n_linear = Linear(
             name=self.name + "_n_linear",
             in_features=self.inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,

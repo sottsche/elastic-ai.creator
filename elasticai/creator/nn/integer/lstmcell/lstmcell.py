@@ -44,6 +44,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.f_gate_linear = Linear(
             name=self.name + "_f_gate_linear",
             in_features=inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             num_dimensions=1,
             bias=True,
@@ -54,6 +56,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.c_gate_linear = Linear(
             name=self.name + "_c_gate_linear",
             in_features=inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             num_dimensions=1,
             bias=True,
@@ -65,6 +69,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.i_gate_linear = Linear(
             name=self.name + "_i_gate_linear",
             in_features=inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             bias=True,
             num_dimensions=1,
@@ -76,6 +82,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.o_gate_linear = Linear(
             name=self.name + "_o_gate_linear",
             in_features=inputs_size + self.hidden_size,
+            use_parallelised_template=True,
+            unroll_factor=2,
             out_features=self.hidden_size,
             bias=True,
             num_dimensions=1,

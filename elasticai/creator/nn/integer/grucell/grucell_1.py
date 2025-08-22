@@ -6,9 +6,8 @@ import torch.nn as nn
 
 from elasticai.creator.nn.integer.addition import Addition
 from elasticai.creator.nn.integer.subtraction import Subtraction
-from elasticai.creator.nn.integer.concatenate import Concatenate
 from elasticai.creator.nn.integer.design_creator_module import DesignCreatorModule
-from elasticai.creator.nn.integer.grucell.design import GRUCell as GRUCellDesign
+from elasticai.creator.nn.integer.grucell.design_1 import GRUCell as GRUCellDesign
 from elasticai.creator.nn.integer.hadamardproduct import HadamardProduct
 from elasticai.creator.nn.integer.hardsigmoid import HardSigmoid
 from elasticai.creator.nn.integer.hardtanh import HardTanh
@@ -33,21 +32,11 @@ class GRUCell(DesignCreatorModule, nn.Module):
         device = kwargs.get("device")
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.concatenate = Concatenate(
-            name=self.name + "_concatenate",
-            inputs_size=self.inputs_size,
-            hidden_size=self.hidden_size,
-            num_features=self.inputs_size + self.hidden_size,
-            num_dimensions=1,
-            quant_bits=self.quant_bits,
-            quant_data_dir=self.quant_data_dir,
-            device=device,
-        )
         self.z_linear = Linear(
             name=self.name + "_z_linear",
             use_parallelised_template=True,
             unroll_factor=2,
-            in_features=self.inputs_size + self.hidden_size,
+            in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
@@ -66,7 +55,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
             name=self.name + "_r_linear",
             use_parallelised_template=True,
             unroll_factor=2,
-            in_features=self.inputs_size + self.hidden_size,
+            in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
@@ -182,7 +171,6 @@ class GRUCell(DesignCreatorModule, nn.Module):
         return GRUCellDesign(
             name=name,
             data_width=self.quant_bits,
-            concatenate=self.concatenate,
             z_linear=self.z_linear,
             z_sigmoid=self.z_sigmoid,
             r_linear=self.r_linear,
@@ -201,7 +189,6 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
 
     def precompute(self) -> None:
-        self.concatenate.precompute()
         self.z_linear.precompute()
         self.z_sigmoid.precompute()
         self.r_linear.precompute()
@@ -241,17 +228,14 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.save_quant_data(q_h_prev, self.quant_data_dir, f"{self.name}_q_x_2")
 
         # concatenate inputs and h_prev
-        q_concated_ihprev = self.concatenate.int_forward(
-            q_inputs1=q_inputs, q_inputs2=q_h_prev
-        )
 
         # gate linear transformations and activations
         # update gate
-        q_z_linear_outputs = self.z_linear.int_forward(q_inputs=q_concated_ihprev)
+        q_z_linear_outputs = self.z_linear.int_forward(q_inputs=q_h_prev)
         q_z_sigmoid_outputs = self.z_sigmoid.int_forward(q_inputs=q_z_linear_outputs)
 
         # reset gate
-        q_r_linear_outputs = self.r_linear.int_forward(q_inputs=q_concated_ihprev)
+        q_r_linear_outputs = self.r_linear.int_forward(q_inputs=q_h_prev)
         q_r_sigmoid_outputs = self.r_sigmoid.int_forward(q_inputs=q_r_linear_outputs)
 
         #ni_linear
@@ -332,17 +316,10 @@ class GRUCell(DesignCreatorModule, nn.Module):
             )
         
         # concatenate inputs and h_prev
-        concatenated = self.concatenate.forward(
-            inputs1=inputs,
-            inputs2=h_prev,
-            given_inputs1_QParams=self.inputs_QParams,
-            given_inputs2_QParams=self.h_prev_QParams,
-        )
-
         # gate linear transformations and activations
         z_linear_outputs = self.z_linear.forward(
-            inputs=concatenated,
-            given_inputs_QParams=self.concatenate.outputs_QParams,
+            inputs=h_prev,
+            given_inputs_QParams=self.h_prev_QParams,
         )
 
         z_sigmoid_outputs = self.z_sigmoid.forward(
@@ -351,8 +328,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
 
         r_linear_outputs = self.r_linear.forward(
-            inputs=concatenated,
-            given_inputs_QParams=self.concatenate.outputs_QParams,
+            inputs=h_prev,
+            given_inputs_QParams=self.h_prev_QParams,
         )
 
         r_sigmoid_outputs = self.r_sigmoid.forward(
