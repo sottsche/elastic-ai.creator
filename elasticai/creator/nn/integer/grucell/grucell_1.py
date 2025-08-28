@@ -29,20 +29,22 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.name = kwargs.get("name")
         self.quant_bits = kwargs.get("quant_bits")
         self.quant_data_dir = kwargs.get("quant_data_dir")
+        self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
+        self.unroll_factor = kwargs.get("unroll_factor", 1)
         device = kwargs.get("device")
         self.logger = logging.getLogger(self.__class__.__name__)
 
         self.z_linear = Linear(
             name=self.name + "_z_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
-            bias=True,
+            bias=False,
         )
         self.z_sigmoid = HardSigmoid(
             name=self.name + "_z_sigmoid", 
@@ -53,15 +55,15 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         self.r_linear = Linear(
             name=self.name + "_r_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
-            bias=True,
+            bias=False,
         )
         self.r_sigmoid = HardSigmoid(
             name=self.name + "_r_sigmoid", 
@@ -90,8 +92,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.nh_linear = Linear(
             name=self.name + "_nh_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,

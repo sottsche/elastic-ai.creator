@@ -32,7 +32,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.quant_data_dir = kwargs.get("quant_data_dir")
         device = kwargs.get("device")
         self.logger = logging.getLogger(self.__class__.__name__)
-
+        self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
+        self.unroll_factor = kwargs.get("unroll_factor", 1)
         self.concatenate = Concatenate(
             name=self.name + "_concatenate",
             inputs_size=self.inputs_size,
@@ -45,8 +46,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.z_linear = Linear(
             name=self.name + "_z_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -64,8 +65,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
 
         self.r_linear = Linear(
             name=self.name + "_r_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.inputs_size + self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
@@ -101,8 +102,8 @@ class GRUCell(DesignCreatorModule, nn.Module):
         )
         self.nh_linear = Linear(
             name=self.name + "_nh_linear",
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,

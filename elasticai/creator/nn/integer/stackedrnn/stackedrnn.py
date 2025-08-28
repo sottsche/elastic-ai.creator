@@ -31,6 +31,8 @@ class StackedRNN(DesignCreatorModule, nn.Module):
         self.name = kwargs.get("name")
         self.quant_bits = kwargs.get("quant_bits")
         self.quant_data_dir = kwargs.get("quant_data_dir", None)
+        self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
+        self.unroll_factor = kwargs.get("unroll_factor", 1)
         device = kwargs.get("device")
 
         self.rnn_layers = nn.ModuleList()
@@ -46,6 +48,8 @@ class StackedRNN(DesignCreatorModule, nn.Module):
                     batch_size=self.batch_size,
                     name=self.name + f"_rnn_layer_{i}",
                     quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
                     device=device,
                 )
             )

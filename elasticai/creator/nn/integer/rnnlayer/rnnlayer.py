@@ -24,7 +24,8 @@ class RNNLayer(nn.Module):
         self.hidden_size = kwargs.get("hidden_size")
         self.batch_size = kwargs.get("batch_size")
         self.window_size = kwargs.get("window_size")
-
+        self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
+        self.unroll_factor = kwargs.get("unroll_factor", 1)
         self.name = kwargs.get("name")
         self.quant_bits = kwargs.get("quant_bits")
         self.quant_data_dir = kwargs.get("quant_data_dir", None)
@@ -55,6 +56,8 @@ class RNNLayer(nn.Module):
                     window_size=self.window_size,
                     quant_bits=self.quant_bits,
                     quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
                     device=device,
                 )
             elif self.gru_type == "rh":
@@ -66,6 +69,8 @@ class RNNLayer(nn.Module):
                     window_size=self.window_size,
                     quant_bits=self.quant_bits,
                     quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
                     device=device,
                 )
             elif self.gru_type == "variant_1":
@@ -77,6 +82,8 @@ class RNNLayer(nn.Module):
                     window_size=self.window_size,
                     quant_bits=self.quant_bits,
                     quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
                     device=device,
                 )
         elif self.cell_type == "mgu":
