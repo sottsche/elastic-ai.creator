@@ -50,7 +50,7 @@ class StackedRNN(Design):
                 self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.r_linear_design._z_x
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.h_next_addition_design._z_x2
         elif self.rnn_layer_0_design._cell_type == "lstm":
-            self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x_2
+            self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.fc_hadamard_product_design._z_x2
 
         self._x_1_addr_width = calculate_address_width(self._x_1_count)
