@@ -1,0 +1,142 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+library ${work_library_name};
+use ${work_library_name}.all;
+entity ${name} is
+    generic (
+        DATA_WIDTH : integer := ${data_width};
+        NUM_DIMENSIONS : integer := ${num_dimensions};
+        X_1_ADDR_WIDTH : integer := ${x_1_addr_width};
+        X_2_ADDR_WIDTH : integer := ${x_2_addr_width};
+        X_3_ADDR_WIDTH : integer := ${x_3_addr_width};
+        Y_1_ADDR_WIDTH : integer := ${y_1_addr_width};
+        Y_2_ADDR_WIDTH : integer := ${y_2_addr_width}; -- Only for python interface
+        Y_3_ADDR_WIDTH : integer := ${y_3_addr_width}; -- Only for python interface
+        X_1_COUNT : integer := ${x_1_count};
+        X_2_COUNT : integer := ${x_2_count};
+        X_3_COUNT : integer := ${x_3_count};-- Only for python interface
+        Y_1_COUNT : integer := ${y_1_count};
+        Y_2_COUNT : integer := ${y_2_count};
+        Y_3_COUNT : integer := ${y_3_count};-- Only for python interface
+        RESOURCE_OPTION : string := "${resource_option}"
+    );
+    port
+    (
+        enable : in std_logic;
+        clock : in std_logic;
+        x_1_address : out std_logic_vector(X_1_ADDR_WIDTH - 1 downto 0);
+        x_2_address : out std_logic_vector(X_2_ADDR_WIDTH - 1 downto 0);
+        x_3_address : out std_logic_vector(X_3_ADDR_WIDTH - 1 downto 0);
+        y_1_address : in std_logic_vector(Y_1_ADDR_WIDTH - 1 downto 0);
+        y_2_address : in std_logic_vector(Y_2_ADDR_WIDTH - 1 downto 0);
+        y_3_address : in std_logic_vector(Y_3_ADDR_WIDTH - 1 downto 0);
+        x_1 : in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        x_2 : in std_logic_vector(DATA_WIDTH - 1 downto 0);
+        x_3 : in std_logic_vector(DATA_WIDTH -1 downto 0);
+        y_1 : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+        y_2 : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+        y_3 : out std_logic_vector(DATA_WIDTH -1 downto 0);
+        done : out std_logic
+    );
+    end ${name};
+
+    architecture rtl of ${name} is
+    function log2(val : INTEGER) return natural is
+        variable result : natural;
+    begin
+        for i in 1 to 31 loop
+            if (val <= (2 ** i)) then
+                result := i;
+                exit;
+            end if;
+        end loop;
+        return result;
+    end function log2;
+    signal mgu_cell_enable : std_logic;
+    signal mgu_cell_clock : std_logic;
+    signal mgu_cell_x_1_address : std_logic_vector(log2(NUM_DIMENSIONS) - 1 downto 0);
+    signal mgu_cell_x_2_address : std_logic_vector(log2(X_2_COUNT) - 1 downto 0);
+    signal mgu_cell_x_1_data : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal mgu_cell_x_2_data : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal mgu_cell_y_address : std_logic_vector(log2(Y_2_COUNT) -1 downto 0);
+    signal mgu_cell_y_data : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal mgu_cell_done : std_logic;
+    signal read_states_from_prev_iteration : boolean := false;
+    type t_cell_state is (s_stop, s_start, s_wait, s_read_out, s_done);
+    signal cell_state : t_cell_state := s_stop;
+    signal loop_counter : integer range 0 to X_1_COUNT;
+    signal reset : std_logic;
+    signal mgu_cell_x_1_address_offset : integer range 0 to X_1_COUNT := 0;
+    signal read_out_done : std_logic;
+    signal y_read_out_data : std_logic_vector(DATA_WIDTH -1 downto 0);
+    signal cell_y_store_data : std_logic_vector(DATA_WIDTH - 1 downto 0);
+    signal y_read_out_address : std_logic_vector(Y_1_ADDR_WIDTH -1 downto 0);
+    signal x_1_address_int : integer range 0 to X_1_COUNT := 0;
+    signal cell_y_store_en : std_logic := '0';
+    signal cell_y_store_address : std_logic_vector(Y_1_ADDR_WIDTH - 1 downto 0);
+    signal cell_y_read_addr : std_logic_vector(Y_1_ADDR_WIDTH - 1 downto 0);
+
+begin
+    reset <= not enable;
+    mgu_cell_clock <= clock;
+    read_states_from_prev_iteration <= (loop_counter > 0);
+    x_1_address_int <= to_integer(unsigned(mgu_cell_x_1_address)) + mgu_cell_x_1_address_offset;
+    x_1_address <= std_logic_vector(to_unsigned(x_1_address_int, x_1_address'length));
+    x_2_address <= mgu_cell_x_2_address when read_states_from_prev_iteration = false else (others => '0');
+    mgu_cell_x_1_data <= x_1;
+    mgu_cell_x_2_data <= x_2 when read_states_from_prev_iteration=false else mgu_cell_y_data;
+    mgu_cell_y_address <= y_2_address when cell_state = s_done else mgu_cell_x_2_address;
+    y_2 <= mgu_cell_y_data;
+
+    fsm_process : process(clock, reset)
+    begin
+        if reset = '1' then
+            loop_counter <= 0;
+            mgu_cell_x_1_address_offset <= 0;
+            cell_state <= s_stop;
+            done <= '0';
+            mgu_cell_enable <= '0';
+        else
+            if rising_edge(clock) then
+                case cell_state is
+                    when s_stop =>
+                        cell_state <= s_start;
+                    when s_start =>
+                        mgu_cell_enable <= '1';
+                        cell_state <= s_wait;
+                    when s_wait =>
+                        if mgu_cell_done = '1' then
+                            cell_state <= s_read_out;
+                        end if;
+                    when s_read_out =>
+                        if loop_counter = X_1_COUNT -1 then
+                            cell_state <= s_done;
+                        else
+                            cell_state <= s_start;
+                            loop_counter <= loop_counter + 1;
+                            mgu_cell_x_1_address_offset <= mgu_cell_x_1_address_offset + NUM_DIMENSIONS;
+                            mgu_cell_enable <= '0';
+                        end if;
+                    when s_done =>
+                        loop_counter <= 0;
+                        done <= '1';
+                end case;
+            end if;
+        end if;
+    end process;
+
+    inst_${cell_name}: entity ${work_library_name}.${cell_name}(rtl)
+        port map(
+            enable => mgu_cell_enable,
+            clock => mgu_cell_clock,
+            x_1_address => mgu_cell_x_1_address,
+            x_2_address => mgu_cell_x_2_address,
+            x_1 => mgu_cell_x_1_data,
+            x_2 => mgu_cell_x_2_data,
+            y_address => mgu_cell_y_address,
+            y => mgu_cell_y_data,
+            done => mgu_cell_done
+        );
+
+end architecture;

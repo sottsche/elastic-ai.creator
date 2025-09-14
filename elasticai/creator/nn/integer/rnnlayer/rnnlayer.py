@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 from elasticai.creator.nn.integer.lstmcell import LSTMCell
-from elasticai.creator.nn.integer.mgucell import MGUCell
 from elasticai.creator.nn.integer.quant_utils import (
     AsymmetricSignedQParams,
     GlobalMinMaxObserver,
@@ -87,15 +86,32 @@ class RNNLayer(nn.Module):
                     device=device,
                 )
         elif self.cell_type == "mgu":
-            self.rnn_cell = MGUCell(
-                name=f"{self.name}_mgu_cell",
-                inputs_size=self.inputs_size,
-                hidden_size=self.hidden_size,
-                window_size=self.window_size,
-                quant_bits=self.quant_bits,
-                quant_data_dir=self.quant_data_dir,
-                device=device,
-            )
+            if self.gru_type == "standard":
+                from elasticai.creator.nn.integer.mgucell.standard.mgucell import MGUCell
+                self.rnn_cell = MGUCell(
+                    name=f"{self.name}_mgu_cell",
+                    inputs_size=self.inputs_size,
+                    hidden_size=self.hidden_size,
+                    window_size=self.window_size,
+                    quant_bits=self.quant_bits,
+                    quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
+                    device=device,
+                )
+            elif self.gru_type == "fh":
+                from elasticai.creator.nn.integer.mgucell.fh.mgucell import MGUCell
+                self.rnn_cell = MGUCell(
+                    name=f"{self.name}_mgu_cell",
+                    inputs_size=self.inputs_size,
+                    hidden_size=self.hidden_size,
+                    window_size=self.window_size,
+                    quant_bits=self.quant_bits,
+                    quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
+                    device=device,
+                )
         else:
             raise ValueError(f"Unsupported cell type: {self.cell_type}")
 

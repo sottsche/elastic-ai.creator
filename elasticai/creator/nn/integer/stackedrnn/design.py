@@ -52,13 +52,16 @@ class StackedRNN(Design):
         elif self.rnn_layer_0_design._cell_type == "lstm":
             self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.fc_hadamard_product_design._z_x2
+        elif self.rnn_layer_0_design._cell_type == "mgu":
+            self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
+            self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.h_next_addition_design._z_x2
 
         self._x_1_addr_width = calculate_address_width(self._x_1_count)
         self._x_2_addr_width = calculate_address_width(self._x_2_count)
         self._y_1_addr_width = calculate_address_width(self._y_1_count)
         self._y_2_addr_width = calculate_address_width(self._y_2_count)
 
-        if self.rnn_layer_0_design._cell_type in ("lstm", "gru"):
+        if self.rnn_layer_0_design._cell_type in ("lstm", "gru", "mgu"):
             self._x_3_count = self.rnn_layer_0_design._x_3_count
             self._y_3_count = self.rnn_layer_0_design._y_3_count
             self._x_3_addr_width = calculate_address_width(self._x_3_count)
