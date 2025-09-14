@@ -85,6 +85,8 @@ class RNNLayer(nn.Module):
                     unroll_factor=self.unroll_factor,
                     device=device,
                 )
+            else:
+                raise ValueError(f"Unsupported GRU type: {self.gru_type}")
         elif self.cell_type == "mgu":
             if self.gru_type == "standard":
                 from elasticai.creator.nn.integer.mgucell.standard.mgucell import MGUCell
@@ -112,6 +114,8 @@ class RNNLayer(nn.Module):
                     unroll_factor=self.unroll_factor,
                     device=device,
                 )
+            else:
+                raise ValueError(f"Unsupported GRU type: {self.gru_type}")
         else:
             raise ValueError(f"Unsupported cell type: {self.cell_type}")
 
