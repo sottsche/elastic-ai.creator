@@ -53,7 +53,7 @@ class RNNLayer(Design):
         self._y_1_addr_width = calculate_address_width(self._y_1_count)
         self._y_2_addr_width = calculate_address_width(self._y_2_count)
 
-        if self._cell_type in ("lstm", "gru"):
+        if self._cell_type in ("lstm", "gru", "mgu"):
             # q_c_prev
             self._x_3_count = self._hidden_size
             self._x_3_addr_width = calculate_address_width(self._x_3_count)
@@ -95,7 +95,7 @@ class RNNLayer(Design):
             "work_library_name": self._work_library_name,
         }
 
-        if self._cell_type in ("lstm", "gru"):
+        if self._cell_type in ("lstm", "gru", "mgu"):
             base_params["x_3_count"] = str(self._x_3_count)
             base_params["y_3_count"] = str(self._y_3_count)
             base_params["x_3_addr_width"] = str(self._x_3_addr_width)
