@@ -8,7 +8,7 @@ from elasticai.creator.nn.integer.addition import Addition
 from elasticai.creator.nn.integer.subtraction import Subtraction
 from elasticai.creator.nn.integer.concatenate import Concatenate
 from elasticai.creator.nn.integer.design_creator_module import DesignCreatorModule
-from elasticai.creator.nn.integer.mgucell.standard.design import MGUCell as MGUCellDesign
+from elasticai.creator.nn.integer.mgucell.variant_1.design import MGUCell as MGUCellDesign
 from elasticai.creator.nn.integer.hadamardproduct import HadamardProduct
 from elasticai.creator.nn.integer.hardsigmoid import HardSigmoid
 from elasticai.creator.nn.integer.hardtanh import HardTanh
@@ -35,19 +35,9 @@ class MGUCell(DesignCreatorModule, nn.Module):
         self.unroll_factor = kwargs.get("unroll_factor", 1)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.concatenate = Concatenate(
-            name=self.name + "_concatenate",
-            inputs_size=self.inputs_size,
-            hidden_size=self.hidden_size,
-            num_features=self.inputs_size + self.hidden_size,
-            num_dimensions=1,
-            quant_bits=self.quant_bits,
-            quant_data_dir=self.quant_data_dir,
-            device=device,
-        )
         self.f_linear = Linear(
             name=self.name + "_f_linear",
-            in_features=self.inputs_size + self.hidden_size,
+            in_features=self.hidden_size,
             use_parallelised_template=self.use_parallelised_template,
             unroll_factor=self.unroll_factor,
             out_features=self.hidden_size,
@@ -72,27 +62,37 @@ class MGUCell(DesignCreatorModule, nn.Module):
             quant_data_dir=self.quant_data_dir,
             device=device,
         )
-        self.concatenate_n = Concatenate(
-            name=self.name + "_concatenate_n",
-            inputs_size=self.inputs_size,
-            hidden_size=self.hidden_size,
-            num_features=self.inputs_size + self.hidden_size,
-            num_dimensions=1,
-            quant_bits=self.quant_bits,
-            quant_data_dir=self.quant_data_dir,
-            device=device,
-        )
-        self.n_linear = Linear(
-            name=self.name + "_n_linear",
+        self.fh_linear = Linear(
+            name=self.name + "_fh_linear",
             use_parallelised_template=self.use_parallelised_template,
             unroll_factor=self.unroll_factor,
-            in_features=self.inputs_size + self.hidden_size,
+            in_features=self.hidden_size,
             out_features=self.hidden_size,
             num_dimensions=1,
             quant_bits=self.quant_bits,
             quant_data_dir=self.quant_data_dir,
             device=device,
             bias=True,
+        )
+        self.ni_linear = Linear(
+            name=self.name + "_ni_linear",
+            use_parallelised_template=self.use_parallelised_template and self.inputs_size > 1,
+            unroll_factor=self.unroll_factor,
+            in_features=self.inputs_size,
+            out_features=self.hidden_size,
+            num_dimensions=1,
+            quant_bits=self.quant_bits,
+            quant_data_dir=self.quant_data_dir,
+            device=device,
+            bias=True,
+        )
+        self.n_addition = Addition(
+            name=self.name + "_n_addition",
+            num_features=self.hidden_size,
+            num_dimensions=1,
+            quant_bits=self.quant_bits,
+            quant_data_dir=self.quant_data_dir,
+            device=device,
         )
         self.n_tanh = HardTanh(
             name=self.name + "_n_tanh", 
@@ -149,12 +149,12 @@ class MGUCell(DesignCreatorModule, nn.Module):
         return MGUCellDesign(
             name=name,
             data_width=self.quant_bits,
-            concatenate=self.concatenate,
             f_linear=self.f_linear,
             f_sigmoid=self.f_sigmoid,
             fh_hadamard=self.fh_hadamard,
-            concatenate_n=self.concatenate_n,
-            n_linear=self.n_linear,
+            fh_linear=self.fh_linear,
+            ni_linear=self.ni_linear,
+            n_addition=self.n_addition,
             n_tanh=self.n_tanh,
             one_minus_f=self.one_minus_f,
             fN_hadamard=self.fN_hadamard,
@@ -164,12 +164,12 @@ class MGUCell(DesignCreatorModule, nn.Module):
         )
 
     def precompute(self) -> None:
-        self.concatenate.precompute()
         self.f_linear.precompute()
         self.f_sigmoid.precompute()
         self.fh_hadamard.precompute()
-        self.concatenate_n.precompute()
-        self.n_linear.precompute()
+        self.ni_linear.precompute()
+        self.fh_linear.precompute()
+        self.n_addition.precompute()
         self.n_tanh.precompute()
         self.one_minus_f.precompute()
         self.fN_hadamard.precompute()
@@ -199,14 +199,9 @@ class MGUCell(DesignCreatorModule, nn.Module):
         self.save_quant_data(q_inputs, self.quant_data_dir, f"{self.name}_q_x_1")
         self.save_quant_data(q_h_prev, self.quant_data_dir, f"{self.name}_q_x_2")
 
-        # concatenate inputs and h_prev
-        q_concated_ihprev = self.concatenate.int_forward(
-            q_inputs1=q_inputs, q_inputs2=q_h_prev
-        )
-
         # gate linear transformations and activations
         # update gate
-        q_f_linear_outputs = self.f_linear.int_forward(q_inputs=q_concated_ihprev)
+        q_f_linear_outputs = self.f_linear.int_forward(q_inputs=q_h_prev)
         q_f_sigmoid_outputs = self.f_sigmoid.int_forward(q_inputs=q_f_linear_outputs)
 
         #rh_hadamard_product
@@ -214,14 +209,16 @@ class MGUCell(DesignCreatorModule, nn.Module):
             q_inputs1=q_f_sigmoid_outputs,
             q_inputs2=q_h_prev,
         )
-        q_n_concated = self.concatenate_n.int_forward(
-            q_inputs1= q_inputs,
-            q_inputs2= q_fh_hadamard_outputs,
-        )
 
         #ni_linear
-        q_n_linear_outputs = self.n_linear.int_forward(q_inputs=q_n_concated)
+        q_ni_linear_outputs = self.ni_linear.int_forward(q_inputs=q_inputs)
+        q_fh_linear_outputs = self.fh_linear.int_forward(q_inputs=q_fh_hadamard_outputs)
 
+        #n_addition
+        q_n_linear_outputs = self.n_addition.int_forward(
+            q_inputs1=q_ni_linear_outputs,
+            q_inputs2=q_fh_linear_outputs
+        )
         #n_tanh
         q_n_tanh_outputs = self.n_tanh.int_forward(q_inputs=q_n_linear_outputs)
 
@@ -274,19 +271,11 @@ class MGUCell(DesignCreatorModule, nn.Module):
             self.f_sigmoid.outputs_QParams.update_quant_params(
                 torch.tensor(1.0, dtype=torch.float32)
             )
-        
-        # concatenate inputs and h_prev
-        concatenated = self.concatenate.forward(
-            inputs1=inputs,
-            inputs2=h_prev,
-            given_inputs1_QParams=self.inputs_QParams,
-            given_inputs2_QParams=self.h_prev_QParams,
-        )
 
         # gate linear transformations and activations
         f_linear_outputs = self.f_linear.forward(
-            inputs=concatenated,
-            given_inputs_QParams=self.concatenate.outputs_QParams,
+            inputs=h_prev,
+            given_inputs_QParams=self.h_prev_QParams,
         )
 
         f_sigmoid_outputs = self.f_sigmoid.forward(
@@ -300,20 +289,23 @@ class MGUCell(DesignCreatorModule, nn.Module):
             given_inputs1_QParams=self.f_sigmoid.outputs_QParams,
             given_inputs2_QParams=self.h_prev_QParams,
         )
-        n_concatenated = self.concatenate_n.forward(
-            inputs1=inputs,
-            inputs2=fh_hadamard_outputs,
-            given_inputs1_QParams=self.inputs_QParams,
-            given_inputs2_QParams=self.fh_hadamard.outputs_QParams,
+        fh_linear_outputs = self.fh_linear.forward(
+            inputs=fh_hadamard_outputs,
+            given_inputs_QParams=self.fh_hadamard.outputs_QParams,
         )
-        n_linear_outputs = self.n_linear.forward(
-            inputs=n_concatenated,
-            given_inputs_QParams=self.concatenate_n.outputs_QParams,
+        ni_linear_outputs = self.ni_linear.forward(
+            inputs=inputs,
+            given_inputs_QParams=self.inputs_QParams,
         )
-
+        n_addition_outputs = self.n_addition.forward(
+            inputs1=ni_linear_outputs,
+            inputs2=fh_linear_outputs,
+            given_inputs1_QParams=self.ni_linear.outputs_QParams,
+            given_inputs2_QParams=self.fh_linear.outputs_QParams,
+        )
         n_tanh_outputs = self.n_tanh.forward(
-            inputs=n_linear_outputs,
-            given_inputs_QParams=self.n_linear.outputs_QParams
+            inputs=n_addition_outputs,
+            given_inputs_QParams=self.n_addition.outputs_QParams
         )
 
         #self.h_prev_QParams.update_quant_params(torch.tensor(3.0, dtype=torch.float32))

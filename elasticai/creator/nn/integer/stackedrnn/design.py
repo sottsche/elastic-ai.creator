@@ -53,8 +53,13 @@ class StackedRNN(Design):
             self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.fc_hadamard_product_design._z_x2
         elif self.rnn_layer_0_design._cell_type == "mgu":
-            self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
+            if self.gru_type in ("standard", "rh", "fh"):
+                self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
+            elif self.gru_type == "variant_1":
+                self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.f_linear_design._z_x
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.h_next_addition_design._z_x2
+        else:
+            raise ValueError(f"Unsupported cell type: {self.rnn_layer_0_design._cell_type}")
 
         self._x_1_addr_width = calculate_address_width(self._x_1_count)
         self._x_2_addr_width = calculate_address_width(self._x_2_count)
