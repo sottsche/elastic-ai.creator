@@ -112,6 +112,7 @@ begin
                             cell_state <= s_read_out;
                         end if;
                     when s_read_out =>
+                        if read_out_done = '1' then
                             if loop_counter = X_1_COUNT-1 then
                                 cell_state <= s_done;
                             else
@@ -120,6 +121,7 @@ begin
                                 lstm_cell_x_1_address_offset <= lstm_cell_x_1_address_offset + NUM_DIMENSIONS;
                                 lstm_cell_enable <= '0';
                             end if;
+                        end if;
                     when s_done =>
                         loop_counter <= 0;
                         done <= '1';
@@ -128,8 +130,46 @@ begin
         end if;
     end process;
 
+    data_offload_process: process(clock, reset)
+    variable read_out_counter : integer range 0 to Y_2_COUNT := 0;
+    variable var_y_store_counter : integer range 0 to Y_1_COUNT := 0;
+    variable delay : integer range 0 to 1 := 0;
+    begin
+        if rising_edge(clock) then
+            if cell_state=s_stop then
+                var_y_store_counter := 0;
+                read_out_counter := 0;
+            elsif cell_state = s_read_out then
+                cell_y1_store_en <= '1';
+                if delay = 0 then
+                    if read_out_done='0' then
+                        if read_out_counter < Y_2_COUNT-1 then
+                            read_out_counter := read_out_counter + 1;
+                            var_y_store_counter := var_y_store_counter + 1;
+                            delay := 1;
+                        else
+                            read_out_done <= '1';
+                            var_y_store_counter := var_y_store_counter + 1;
+                        end if;
+                    end if;
+                else
+                    delay := delay - 1;
+                end if;
+            else
+                read_out_counter := 0;
+                read_out_done <= '0';
+                delay := 1;
+                cell_y1_store_en <= '0';
+            end if;
+
+            cell_y1_read_addr <= std_logic_vector(to_unsigned(read_out_counter, cell_y1_read_addr'length));
+            cell_y1_store_addr_std <= std_logic_vector(to_unsigned(var_y_store_counter, cell_y1_store_addr_std'length));
+        end if;
+    end process;
+
+    temp_addr <= cell_y1_read_addr when lstm_cell_done='1' else lstm_cell_x_2_address;
     -- hidden states, from previous iteration
-    lstm_cell_y_1_address <= y_2_address when cell_state=s_done else lstm_cell_x_2_address;
+    lstm_cell_y_1_address <= y_2_address when cell_state=s_done else temp_addr;
 
     -- cell states, from previous iteration
     lstm_cell_y_2_address <= y_3_address when cell_state=s_done else lstm_cell_x_3_address; -- read_out
@@ -154,4 +194,27 @@ begin
             done  => lstm_cell_done
         );
 
+    cell_y1_store_data <= lstm_cell_y_1_data;
+    ram_y1 : entity ${work_library_name}.${name}_ram(rtl)
+    generic map (
+        RAM_WIDTH => DATA_WIDTH,
+        RAM_DEPTH_WIDTH => Y_1_ADDR_WIDTH,
+        RAM_PERFORMANCE => "LOW_LATENCY",
+        RESOURCE_OPTION => RESOURCE_OPTION,
+        INIT_FILE => ""
+    )
+    port map  (
+        addra  => cell_y1_store_addr_std,
+        addrb  => y1_rd_out_addr,
+        dina   => cell_y1_store_data,
+        clka   => clock,
+        clkb   => clock,
+        wea    => cell_y1_store_en,
+        enb    => '1',
+        rstb   => '0',
+        regceb => '1',
+        doutb  => y1_rd_out_data
+    );
+    y_1 <= y1_rd_out_data; -- read_out
+    y1_rd_out_addr <= y_1_address; -- read_out
 end architecture;

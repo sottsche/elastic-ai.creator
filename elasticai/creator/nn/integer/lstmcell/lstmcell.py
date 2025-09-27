@@ -30,7 +30,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.quant_bits = kwargs.get("quant_bits")
         self.quant_data_dir = kwargs.get("quant_data_dir", None)
         device = kwargs.get("device")
-
+        self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
+        self.unroll_factor = kwargs.get("unroll_factor", 1)
         self.concatenate = Concatenate(
             name=self.name + "_concatenate",
             inputs_size=inputs_size,
@@ -44,8 +45,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.f_gate_linear = Linear(
             name=self.name + "_f_gate_linear",
             in_features=inputs_size + self.hidden_size,
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             out_features=self.hidden_size,
             num_dimensions=1,
             bias=True,
@@ -56,8 +57,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.c_gate_linear = Linear(
             name=self.name + "_c_gate_linear",
             in_features=inputs_size + self.hidden_size,
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             out_features=self.hidden_size,
             num_dimensions=1,
             bias=True,
@@ -69,8 +70,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.i_gate_linear = Linear(
             name=self.name + "_i_gate_linear",
             in_features=inputs_size + self.hidden_size,
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             out_features=self.hidden_size,
             bias=True,
             num_dimensions=1,
@@ -82,8 +83,8 @@ class LSTMCell(DesignCreatorModule, nn.Module):
         self.o_gate_linear = Linear(
             name=self.name + "_o_gate_linear",
             in_features=inputs_size + self.hidden_size,
-            use_parallelised_template=True,
-            unroll_factor=2,
+            use_parallelised_template=self.use_parallelised_template,
+            unroll_factor=self.unroll_factor,
             out_features=self.hidden_size,
             bias=True,
             num_dimensions=1,
