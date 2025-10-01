@@ -123,6 +123,8 @@ class HardSigmoid(DesignCreatorModule, nn.Module):
         outputs = self._customized_hard_sigmoid(inputs)
 
         self.outputs_QParams = self.inputs_QParams
+        if self.training:
+            self.outputs_QParams.update_quant_params(outputs)
         outputs = SimQuant.apply(outputs, self.outputs_QParams)
 
         return outputs
