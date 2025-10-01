@@ -43,8 +43,14 @@ class Subtraction(Design):
         self._scaling_bits_M_2 = scaling_m_q_2
         self._m_q_1_shift = m_q_1_shift
         self._m_q_2_shift = m_q_2_shift
-        self._m_q_1_data_width = int(np.ceil(np.log2(self._m_q_1))) + 1
-        self._m_q_2_data_width = int(np.ceil(np.log2(self._m_q_2))) + 1
+        if self._m_q_1 != 0:
+            self._m_q_1_data_width = int(np.ceil(np.log2(self._m_q_1))) + 1
+        else:
+            self._m_q_1_data_width = 1
+        if self._m_q_2 != 0:
+            self._m_q_2_data_width = int(np.ceil(np.log2(self._m_q_2))) + 1
+        else:
+            self._m_q_2_data_width = 1
 
         self._z_x1 = z_x1
         self._z_x2 = z_x2
