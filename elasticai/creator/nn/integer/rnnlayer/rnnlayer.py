@@ -39,15 +39,13 @@ class RNNLayer(nn.Module):
                 quant_bits=self.quant_bits,
                 quant_data_dir=self.quant_data_dir,
                 device=device,
-                use_parallelised_template=kwargs.get(
-                    "use_parallelised_template", False
-                ),
-                unroll_factor=kwargs.get("unroll_factor", 1),
+                use_parallelised_template=self.use_parallelised_template,
+                unroll_factor=self.unroll_factor,
                 lstm_use_pipeline_template=self.lstm_use_pipeline_template,
             )
         elif self.cell_type == "gru":
             if self.gru_type == "standard":
-                from elasticai.creator.nn.integer.grucell.grucell import GRUCell
+                from elasticai.creator.nn.integer.grucell.Standard.grucell import GRUCell
                 self.rnn_cell = GRUCell(
                     name=f"{self.name}_gru_cell",
                     inputs_size=self.inputs_size,
@@ -60,7 +58,7 @@ class RNNLayer(nn.Module):
                     device=device,
                 )
             elif self.gru_type == "rh":
-                from elasticai.creator.nn.integer.grucell.grucell_rh import GRUCell
+                from elasticai.creator.nn.integer.grucell.RH.grucell import GRUCell
                 self.rnn_cell = GRUCell(
                     name=f"{self.name}_gru_cell",
                     inputs_size=self.inputs_size,
@@ -73,7 +71,7 @@ class RNNLayer(nn.Module):
                     device=device,
                 )
             elif self.gru_type == "variant_1":
-                from elasticai.creator.nn.integer.grucell.grucell_1 import GRUCell
+                from elasticai.creator.nn.integer.grucell.Variant.grucell import GRUCell
                 self.rnn_cell = GRUCell(
                     name=f"{self.name}_gru_cell",
                     inputs_size=self.inputs_size,
@@ -225,37 +223,33 @@ class RNNLayer(nn.Module):
         given_inputs_QParams: torch.nn.Module,
         given_h_prev_QParams: torch.nn.Module,
         given_c_prev_QParams: torch.nn.Module,
-        enable_simquant: bool = True,
     ) -> torch.FloatTensor:
-        if enable_simquant:
+        if self.training:
+            if given_inputs_QParams is not None:
+                self.inputs_QParams = given_inputs_QParams
+            else:
+                self.inputs_QParams.update_quant_params(inputs)
             if self.training:
-                if given_inputs_QParams is not None:
-                    self.inputs_QParams = given_inputs_QParams
+                if given_h_prev_QParams is not None:
+                    self.h_prev_QParams = given_h_prev_QParams
                 else:
-                    self.inputs_QParams.update_quant_params(inputs)
-                if self.training:
-                    if given_h_prev_QParams is not None:
-                        self.h_prev_QParams = given_h_prev_QParams
-                    else:
-                        self.h_prev_QParams.update_quant_params(h_prev)
-                if self.training:
-                    if given_c_prev_QParams is not None:
-                        self.c_prev_QParams = given_c_prev_QParams
-                    else:
-                        self.c_prev_QParams.update_quant_params(c_prev)
+                    self.h_prev_QParams.update_quant_params(h_prev)
+            if self.training:
+                if given_c_prev_QParams is not None:
+                    self.c_prev_QParams = given_c_prev_QParams
+                else:
+                    self.c_prev_QParams.update_quant_params(c_prev)
 
-            inputs = SimQuant.apply(inputs, self.inputs_QParams)
+        inputs = SimQuant.apply(inputs, self.inputs_QParams)
 
         outputs = torch.zeros(
             self.batch_size, self.window_size, self.hidden_size, dtype=torch.float32
         ).to(inputs.device)
 
         for t in range(self.window_size):
-            if enable_simquant:
-                if self.training:
-                    self.h_prev_QParams.update_quant_params(h_prev)
-                    if c_prev is not None:
-                        self.c_prev_QParams.update_quant_params(c_prev)
+            h_prev = SimQuant.apply(h_prev, self.h_prev_QParams)
+            if c_prev is not None:  # to be compatible with GRU
+                c_prev = SimQuant.apply(c_prev, self.c_prev_QParams)
 
             h_next, c_next = self.rnn_cell.forward(
                 inputs=inputs[:, t, :],
@@ -269,12 +263,11 @@ class RNNLayer(nn.Module):
             if c_next is not None:
                 c_prev = c_next.clone()
 
-        if enable_simquant:
-            if self.training:
-                self.outputs_QParams.update_quant_params(outputs)
-            outputs = SimQuant.apply(outputs, self.outputs_QParams)
+        if self.training:
+            self.outputs_QParams.update_quant_params(outputs)
+        outputs = SimQuant.apply(outputs, self.outputs_QParams)
 
-            self.h_next_QParams = self.rnn_cell.h_next_QParams
-            self.c_next_QParams = self.rnn_cell.c_next_QParams
+        self.h_next_QParams = self.rnn_cell.h_next_QParams
+        self.c_next_QParams = self.rnn_cell.c_next_QParams
 
         return outputs, h_next, c_next
