@@ -8,7 +8,7 @@ from elasticai.creator.nn.integer.addition import Addition
 from elasticai.creator.nn.integer.subtraction import Subtraction
 from elasticai.creator.nn.integer.concatenate import Concatenate
 from elasticai.creator.nn.integer.design_creator_module import DesignCreatorModule
-from elasticai.creator.nn.integer.grucell.design import GRUCell as GRUCellDesign
+from elasticai.creator.nn.integer.grucell.Standard.design import GRUCell as GRUCellDesign
 from elasticai.creator.nn.integer.hadamardproduct import HadamardProduct
 from elasticai.creator.nn.integer.hardsigmoid import HardSigmoid
 from elasticai.creator.nn.integer.hardtanh import HardTanh
@@ -17,7 +17,6 @@ from elasticai.creator.nn.integer.math_operations.math_operations import MathOpe
 from elasticai.creator.nn.integer.quant_utils.Observers import GlobalMinMaxObserver
 from elasticai.creator.nn.integer.quant_utils.QParams import AsymmetricSignedQParams
 from elasticai.creator.nn.integer.quant_utils.SimQuant import SimQuant
-
 
 class GRUCell(DesignCreatorModule, nn.Module):
     def __init__(self, **kwargs):
@@ -34,6 +33,7 @@ class GRUCell(DesignCreatorModule, nn.Module):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.use_parallelised_template = kwargs.get("use_parallelised_template", False)
         self.unroll_factor = kwargs.get("unroll_factor", 1)
+
         self.concatenate = Concatenate(
             name=self.name + "_concatenate",
             inputs_size=self.inputs_size,

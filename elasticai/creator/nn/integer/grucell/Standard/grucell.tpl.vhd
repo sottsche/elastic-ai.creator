@@ -381,7 +381,7 @@ architecture rtl of ${name} is
             done  => zn_hadamard_product_done
         );
 
-        zh_hadamard_product_enable <= z1_addition_done; 
+        zh_hadamard_product_enable <= z_gate_linear_done; 
         zh_hadamard_product_clock <= clock;
         zh_hadamard_product_x_1 <= z_sigmoid_y;
         zh_hadamard_product_x_2 <= x_2;
