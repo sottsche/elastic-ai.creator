@@ -312,14 +312,6 @@ class GRUCell(DesignCreatorModule, nn.Module):
             q_h_next,
             self.quant_data_dir,
             f"{self.name}_q_y")
-        # print("---------------------------------------------------------------------")
-        # print(f"h_prev: {self.h_prev_QParams.dequantize(q_h_prev)}")
-        # print(f"z: {self.z_sigmoid.outputs_QParams.dequantize(q_z_sigmoid_outputs)}")
-        # print(f"1-z: {self.one_minus_z.outputs_QParams.dequantize(q_one_minus_z_outputs)}")
-        # print(f"zN: {self.zN_hadamard.outputs_QParams.dequantize(q_zN_hadamard_outputs)}")
-        # print(f"ZH: {self.zH_hadamard.outputs_QParams.dequantize(q_zH_hadamard_outputs)}")
-        # print(f"h_next : {self.h_next_addition.outputs_QParams.dequantize(q_h_next)}")
-        # print("---------------------------------------------------------------------")
         q_c_next = None
 
         return q_h_next, q_c_next

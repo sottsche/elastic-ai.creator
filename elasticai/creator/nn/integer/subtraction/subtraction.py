@@ -77,7 +77,7 @@ class Subtraction(DesignCreatorModule, nn.Module):
         self.scale_factor_m_q_2_shift, self.scale_factor_m_q_2 = scaling_M(
             self.scale_factor_M_2
         )
-        print(self.outputs_QParams.zero_point)
+        # print(self.outputs_QParams.zero_point)
         self.precomputed = True
 
     def int_forward(
