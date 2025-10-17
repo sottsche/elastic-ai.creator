@@ -247,6 +247,11 @@ class RNNLayer(nn.Module):
         ).to(inputs.device)
 
         for t in range(self.window_size):
+            if self.training:
+                self.h_prev_QParams.update_quant_params(h_prev)
+                if c_prev is not None:  # to be compatible with GRU
+                    self.c_prev_QParams.update_quant_params(c_prev)
+                
             h_prev = SimQuant.apply(h_prev, self.h_prev_QParams)
             if c_prev is not None:  # to be compatible with GRU
                 c_prev = SimQuant.apply(c_prev, self.c_prev_QParams)
