@@ -69,28 +69,21 @@ begin
         if rising_edge(clock) then
             x_1 <= x_1_arr(to_integer(unsigned(x_1_address)));
             x_2 <= x_2_arr(to_integer(unsigned(x_2_address)));
-            x_3 <= x_3_arr(to_integer(unsigned(x_3_address)));
         end if;
     end process ;
     test_main : process
-        constant file_inputs_x1:      string := "./data/stacked_rnnrnn_layer_0_q_x_1.txt";
-        constant file_inputs_x2:      string := "./data/stacked_rnnrnn_layer_0_q_x_2.txt";
-        constant file_inputs_x3:      string := "./data/stacked_rnnrnn_layer_0_q_x_3.txt";
-        constant file_labels_y1:      string := "./data/stacked_rnnrnn_layer_0_q_y_1.txt";
-        constant file_labels_y2:      string := "./data/stacked_rnnrnn_layer_0_q_y_2.txt";
-        constant file_labels_y3:      string := "./data/stacked_rnnrnn_layer_0_q_y_3.txt";
-        constant file_pred_y1:      string := "./data/stacked_rnnrnn_layer_0_q_out_1.txt";
-        constant file_pred_y2:      string := "./data/stacked_rnnrnn_layer_0_q_out_2.txt";
-        constant file_pred_y3:      string := "./data/stacked_rnnrnn_layer_0_q_out_3.txt";
+        constant file_inputs_x1:      string := "./data/stackedrnn_0_rnn_layer_0_q_x_1.txt";
+        constant file_inputs_x2:      string := "./data/stackedrnn_0_rnn_layer_0_q_x_2.txt";
+        constant file_labels_y1:      string := "./data/stackedrnn_0_rnn_layer_0_q_y_1.txt";
+        constant file_labels_y2:      string := "./data/stackedrnn_0_rnn_layer_0_q_y_2.txt";
+        constant file_pred_y1:      string := "./data/stackedrnn_0_rnn_layer_0_q_out_1.txt";
+        constant file_pred_y2:      string := "./data/stackedrnn_0_rnn_layer_0_q_out_2.txt";
         file fp_inputs_x1:      text;
         file fp_inputs_x2:      text;
-        file fp_inputs_x3:      text;
         file fp_labels_y1:      text;
         file fp_labels_y2:      text;
-        file fp_labels_y3:      text;
         file fp_pred_y1:      text;
         file fp_pred_y2:      text;
-        file fp_pred_y3:      text;
         variable line_content:  integer;
         variable line_num:      line;
         variable filestatus:    file_open_status;
@@ -110,12 +103,6 @@ begin
         assert filestatus = OPEN_OK
             report "file_open_status /= file_ok"
             severity FAILURE;
-        file_open (filestatus, fp_inputs_x3, file_inputs_x3, READ_MODE);
-        report file_inputs_x3 & LF & HT & "file_open_status = " &
-                    file_open_status'image(filestatus);
-        assert filestatus = OPEN_OK
-            report "file_open_status /= file_ok"
-            severity FAILURE;
 
         file_open (filestatus, fp_labels_y1, file_labels_y1, READ_MODE);
         report file_labels_y1 & LF & HT & "file_open_status = " &
@@ -129,12 +116,6 @@ begin
         assert filestatus = OPEN_OK
             report "file_open_status /= file_ok"
             severity FAILURE;
-        file_open (filestatus, fp_labels_y3, file_labels_y3, READ_MODE);
-        report file_labels_y3 & LF & HT & "file_open_status = " &
-                    file_open_status'image(filestatus);
-        assert filestatus = OPEN_OK
-            report "file_open_status /= file_ok"
-            severity FAILURE;
 
         file_open (filestatus, fp_pred_y1, file_pred_y1, WRITE_MODE);
         report file_pred_y1 & LF & HT & "file_open_status = " &
@@ -144,12 +125,6 @@ begin
             severity FAILURE;
         file_open (filestatus, fp_pred_y2, file_pred_y2, WRITE_MODE);
         report file_pred_y2 & LF & HT & "file_open_status = " &
-                    file_open_status'image(filestatus);
-        assert filestatus = OPEN_OK
-            report "file_open_status /= file_ok"
-            severity FAILURE;
-        file_open (filestatus, fp_pred_y3, file_pred_y3, WRITE_MODE);
-        report file_pred_y3 & LF & HT & "file_open_status = " &
                     file_open_status'image(filestatus);
         assert filestatus = OPEN_OK
             report "file_open_status /= file_ok"
@@ -175,13 +150,6 @@ begin
                 readline (fp_inputs_x2, line_num);
                 read (line_num, line_content);
                 x_2_arr(input_rd_cnt) <= std_logic_vector(to_signed(line_content, DATA_WIDTH));
-                input_rd_cnt := input_rd_cnt + 1;
-            end loop;
-            input_rd_cnt := 0;
-            while input_rd_cnt < X_3_COUNT loop
-                readline (fp_inputs_x3, line_num);
-                read (line_num, line_content);
-                x_3_arr(input_rd_cnt) <= std_logic_vector(to_signed(line_content, DATA_WIDTH));
                 input_rd_cnt := input_rd_cnt + 1;
             end loop;
             wait for C_CLK_PERIOD;
@@ -213,29 +181,15 @@ begin
                 output_rd_cnt := output_rd_cnt + 1;
             end loop;
             -- assert false report "stop." severity FAILURE;
-            output_rd_cnt := 0;
-            while output_rd_cnt< Y_3_COUNT loop
-                readline (fp_labels_y3, line_num);
-                read (line_num, line_content);
-                y_3_address <= std_logic_vector(to_unsigned(output_rd_cnt, y_3_address'length));
-                wait for 2*C_CLK_PERIOD;
-                report "Y3: Correct/Simulated = " & integer'image(line_content) & "/" & integer'image(to_integer(signed(y_3))) & ", Differece = " & integer'image(line_content - to_integer(signed(y_3)));
-                write (line_num, to_integer(signed(y_3)));
-                writeline(fp_pred_y3, line_num);
-                output_rd_cnt := output_rd_cnt + 1;
-            end loop;
             uut_enable <= '0';
         end loop;
         wait until falling_edge(clock);
         file_close (fp_inputs_x1);
         file_close (fp_inputs_x2);
-        file_close (fp_inputs_x3);
         file_close (fp_labels_y1);
         file_close (fp_labels_y2);
-        file_close (fp_labels_y3);
         file_close (fp_pred_y1);
         file_close (fp_pred_y2);
-        file_close (fp_pred_y3);
         report "All files closed.";
         report "Time taken for processing = " & time'image(v_TIME);
         report "Simulation done.";
