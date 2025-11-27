@@ -53,7 +53,7 @@ class StackedRNN(Design):
             self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
             self._z_x3 = self.rnn_layer_0_design.rnn_cell_deisgn.fc_hadamard_product_design._z_x2
         elif self.rnn_layer_0_design._cell_type == "mgu":
-            if self.gru_type in ("standard", "rh", "fh"):
+            if self.gru_type in ("standard", "rh", "fh", "fnh"):
                 self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.concatenate_design._z_x2
             elif self.gru_type in ("variant_1", "variant_2"):
                 self._z_x2 = self.rnn_layer_0_design.rnn_cell_deisgn.f_linear_design._z_x

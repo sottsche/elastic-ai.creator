@@ -112,6 +112,19 @@ class RNNLayer(nn.Module):
                     unroll_factor=self.unroll_factor,
                     device=device,
                 )
+            elif self.gru_type == "fnh":
+                from elasticai.creator.nn.integer.mgucell.fnh.mgucell import MGUCell
+                self.rnn_cell = MGUCell(
+                    name=f"{self.name}_mgu_cell",
+                    inputs_size=self.inputs_size,
+                    hidden_size=self.hidden_size,
+                    window_size=self.window_size,
+                    quant_bits=self.quant_bits,
+                    quant_data_dir=self.quant_data_dir,
+                    use_parallelised_template=self.use_parallelised_template,
+                    unroll_factor=self.unroll_factor,
+                    device=device,
+                )
             elif self.gru_type == "variant_1":
                 from elasticai.creator.nn.integer.mgucell.variant_1.mgucell import MGUCell
                 self.rnn_cell = MGUCell(
